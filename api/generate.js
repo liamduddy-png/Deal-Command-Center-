@@ -60,39 +60,55 @@ Before generating any output, use the search_deals tool to find the deal in HubS
 Then use get_deal_contacts and get_deal_engagements to pull full context.
 Use this data to inform everything you write.
 
-MILESTONE DERIVATION RULES — auto-derive from deal context:
+FORECAST CANON v2.0 — Forecasting is inspection, not storytelling.
 
-CHANGE:
-- Identify Pain vague or missing → "Not validated"
-- Actively evaluating tools / committed to solving → "Committed"
+FORMAT:
+- GUT only
+- Flat milestone list only
+- Gong output must fit one note
 
-TECHNICAL:
-- Demo scheduled or in progress → "Eval"
-- Demo done, technical validated, confirmed fit → "Fit"
-- Verbal preference, validation complete → "Vendor of Choice"
+APPROVED MILESTONES (use these exact lowercase values):
 
-PRICING:
-- No pricing shared yet → "Not given"
-- Pricing sent but not aligned / under review → "Aware"
-- Reviewed, negotiating, aligned → "Closure"
+Change: change not validated | change committed
+Technical: technical eval | technical fit | technical selection / vendor of choice
+Pricing: pricing not given | pricing aware | pricing closure
+Commercial: commercial NDA | commercial MSA
+Security: security not started | security started | security complete
 
-PAPERWORK:
-- NDA signed → "NDA"
-- MSA in progress or sent → "MSA"
+DERIVATION RULES — auto-derive from deal context:
 
-SECURITY:
-- No security review started → "Not started"
-- Questionnaire or security review underway → "Started"
-- Security approved / cleared → "Complete"
+Change:
+- Identify Pain vague or missing → change not validated
+- Actively evaluating tools / committed to solving → change committed
 
-POWER:
-- Exec copied on email → "Awareness"
-- Exec attending calls → "Involvement"
-- Exec actively advocating → "Supportive"
+Technical:
+- Demo scheduled or in progress → technical eval
+- Demo done, technical validated, confirmed fit → technical fit
+- Verbal preference, validation complete → technical selection / vendor of choice
+
+Pricing:
+- No pricing shared yet → pricing not given
+- Pricing sent but not aligned / under review → pricing aware
+- Reviewed, negotiating, aligned → pricing closure
+
+Commercial:
+- NDA signed → commercial NDA
+- MSA in progress or sent → commercial MSA
+
+Security:
+- No security review started → security not started
+- Questionnaire or security review underway → security started
+- Security approved / cleared → security complete
+
+COMMIT CRITERIA — deal is NOT Commit unless ALL three are present:
+- change committed
+- technical selection / vendor of choice
+- pricing closure
+If any are missing, the deal is not Commit. Flag what's missing.
 
 MILESTONE OUTPUT FORMAT (always use this exact inline format):
 Company – $Amount
-Milestone: Change (Value), Technical (Value), Pricing (Value), Power (Value), Paperwork (Value)
+Milestone: Change (value), Technical (value), Pricing (value), Commercial (value), Security (value)
 Next Step: [specific action with date]
 Risk: [specific gaps]
 
@@ -195,15 +211,16 @@ Email 2: social proof — short customer story relevant to their role
 Email 3: breakup — "I'll assume this isn't a priority unless I hear otherwise."
 Do not be pushy. Focus on the operational friction they originally expressed.`,
 
-  gut_forecast: `You are writing a forecast block.
+  gut_forecast: `You are writing a GUT forecast block. Forecasting is inspection, not storytelling.
 First, use your HubSpot tools to pull deal data, contacts, and engagements.
-Auto-derive milestones from deal signals using the milestone derivation rules.
-Output format:
+Auto-derive milestones from deal signals using the Forecast Canon v2.0 approved values.
+Output format (flat milestone list, must fit one note):
 Company – $Amount
-Milestone: Change (Value), Technical (Value), Pricing (Value), Power (Value), Paperwork (Value)
+Milestone: Change (value), Technical (value), Pricing (value), Commercial (value), Security (value)
 Next Step: [specific action with date]
 Risk: [specific gaps]
-Then add a 1-line confidence narrative with close date.`,
+Then add a 1-line confidence narrative with close date.
+Apply commit criteria: deal is NOT Commit unless change committed + technical selection / vendor of choice + pricing closure are all present. Flag what's missing.`,
 
   meeting_prep: `You are preparing a pre-call brief.
 First, use your HubSpot tools to find this deal, contacts, and recent activity.
@@ -218,20 +235,22 @@ Use construction-specific language.`,
   meddpicc_review: `You are reviewing the MEDDPICC scorecard for this deal.
 First, use your HubSpot tools to pull all MEDDPICC fields and recent activity.
 For each element: Rate Strong / Developing / Gap, provide evidence, recommend action.
-Then auto-derive milestones using the derivation rules and output the inline milestone block:
+Then auto-derive milestones using Forecast Canon v2.0 and output the inline milestone block:
 Company – $Amount
-Milestone: Change (Value), Technical (Value), Pricing (Value), Power (Value), Paperwork (Value)
+Milestone: Change (value), Technical (value), Pricing (value), Commercial (value), Security (value)
 Next Step: [action with date]
-Risk: [gaps]`,
+Risk: [gaps]
+Apply commit criteria: deal is NOT Commit unless change committed + technical selection / vendor of choice + pricing closure are all present.`,
 
-  milestone_review: `You are auto-deriving milestone status.
+  milestone_review: `You are auto-deriving milestone status using Forecast Canon v2.0.
 First, use your HubSpot tools to pull deal properties, contacts, and engagements.
-Use the milestone derivation rules to map signals to milestone values.
+Use the approved milestone values to map signals. Use exact lowercase values only.
 Output in this exact format:
 Company – $Amount
-Milestone: Change (Value), Technical (Value), Pricing (Value), Power (Value), Paperwork (Value)
+Milestone: Change (value), Technical (value), Pricing (value), Commercial (value), Security (value)
 Next Step: [specific action with date]
 Risk: [specific gaps]
+Apply commit criteria: deal is NOT Commit unless change committed + technical selection / vendor of choice + pricing closure are all present.
 Be precise. Flag unknowns.`,
 
   call_track: `You are building a call framework.
