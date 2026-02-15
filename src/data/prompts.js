@@ -30,6 +30,12 @@ Format as:
 - Key risk factors
 - Confidence level (High/Medium/Low)`,
 
+    post_meeting: `Draft a post-meeting follow-up email for ${deal.company}.
+Contact: ${deal.contact}. Stage: ${deal.stage || "N/A"}. Deal value: ${fmtAmt}.
+Use the most recent meeting/call engagement data to reconstruct what was discussed.
+Structure: What we heard → Where Trunk Tools fits → Resources (if any) → Proposed next step.
+Tone: calm, professional, field-credible. No hype.`,
+
     meeting_prep: `Pre-call preparation brief for ${deal.company}.
 Contact: ${deal.contact}. Stage: ${deal.stage || "N/A"}. Deal: ${fmtAmt}.
 Provide:

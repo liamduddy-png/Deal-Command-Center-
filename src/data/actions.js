@@ -2,6 +2,7 @@ export const PIPELINE_ACTIONS = [
   { id: "follow_up", label: "Follow-Up", icon: "\u2709\uFE0F", desc: "Draft follow-up email" },
   { id: "ghost", label: "Ghost Sequence", icon: "\uD83D\uDC7B", desc: "Re-engagement emails" },
   { id: "gut_forecast", label: "Forecast", icon: "\uD83D\uDCCA", desc: "Milestone forecast block" },
+  { id: "post_meeting", label: "Post-Meeting", icon: "\u2709\uFE0F", desc: "Post-meeting follow-up email" },
   { id: "meeting_prep", label: "Meeting Prep", icon: "\uD83C\uDFAF", desc: "Pre-call brief" },
   { id: "spin_deck", label: "SPIN Deck", icon: "\uD83C\uDFAF", desc: "SPIN selling deck outline" },
   { id: "meddpicc_review", label: "MEDDPICC Review", icon: "\uD83D\uDCCB", desc: "MEDDPICC scorecard" },

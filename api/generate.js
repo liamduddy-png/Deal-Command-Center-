@@ -237,6 +237,44 @@ Risk: [specific gaps]
 Then add a 1-line confidence narrative with close date.
 Apply commit criteria: deal is NOT Commit unless change committed + technical selection / vendor of choice + pricing closure are all present. Flag what's missing.`,
 
+  post_meeting: `You are drafting a post-meeting follow-up email after an intro or discovery call.
+First, use your HubSpot tools to find this deal and pull all context, contacts, and engagements.
+Use the most recent engagement data to reconstruct what was discussed.
+
+STRUCTURE (use these exact sections):
+
+1. Opening — 1 line. Acknowledge their time. No fluff.
+
+2. "What we heard" — bullet list.
+Mirror back the key themes and priorities they shared.
+Use their language, not yours. Show you were listening.
+This is the most important section — it builds trust.
+
+3. "Where Trunk Tools fits" — bullet list.
+Map product capabilities directly to what they said matters.
+Position as a force multiplier for their current stack, not a replacement.
+Include SMS field access, document-backed answers, submittal reviews, workflow customization.
+Only reference capabilities relevant to what they actually discussed.
+
+4. "Resources" — bullet list (optional).
+Only include if there are specific materials to share.
+One-pagers, case studies, demo clips, anything they can circulate internally.
+
+5. "Proposed next step" — bullet list.
+Be specific: who, what, when.
+Suggest looping in broader team, sharing project data, or scheduling a deeper dive.
+End with a clear forward action tied to their timeline.
+
+TONE:
+- Calm, professional, field-credible
+- No exclamation points, no hype
+- Short sign-off: "Appreciate it," + name
+
+RULES:
+- Do NOT invent meeting details — only reference what's inferable from HubSpot data
+- If meeting context is thin, keep "What we heard" general but honest
+- Never mention MEDDPICC, milestones, or internal frameworks in the email`,
+
   meeting_prep: `You are preparing a pre-call brief.
 First, use your HubSpot tools to find this deal, contacts, and recent activity.
 Include: attendees, their likely priorities, open questions to ask,
