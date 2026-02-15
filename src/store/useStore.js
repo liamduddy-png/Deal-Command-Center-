@@ -171,13 +171,24 @@ const useStore = create((set, get) => ({
       risk: selected.risk || null,
       projects: selected.projects || null,
       // HubSpot intel (auto-injected, no pasting)
+      // MEDDPICC fields — for analysis, not just display
       meddpicc: hubspot?.meddpicc || null,
+      // Gong call summaries
       gong: hubspot?.gong || null,
+      // Contact intelligence: names, titles, influence, active status
       contacts: hubspot?.contacts || [],
+      contactSummary: hubspot?.contactSummary || null,
+      // Activity intelligence: last 10 engagements with sender/recipient
       recentActivity: hubspot?.engagements || [],
-      engagementRecency: hubspot?.engagements?.length > 0
-        ? hubspot.engagements[0].date
-        : null,
+      activitySummary: hubspot?.activitySummary || null,
+      // Historical signals: days in pipeline, stale detection, gaps
+      history: hubspot?.history || null,
+      // Milestone properties from HubSpot custom fields
+      hubspotMilestones: hubspot?.milestones || null,
+      // Deal-level fields
+      nextStep: hubspot?.deal?.nextStep || null,
+      dealRisk: hubspot?.deal?.risk || null,
+      compellingEvent: hubspot?.deal?.compellingEvent || null,
       dealDescription: hubspot?.deal?.description || null,
     };
 

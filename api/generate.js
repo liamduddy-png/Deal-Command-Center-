@@ -54,6 +54,29 @@ Security – [derived value]
 Next Step: [specific action with owner]
 
 Risk: [key risks identified from gaps]
+
+CONTEXT INTELLIGENCE — the deal context JSON includes all of this automatically:
+1. MEDDPICC fields — analyze them, not just read. Flag gaps, rate strength.
+2. Activity Intelligence (recentActivity + activitySummary):
+   - Last 10 engagements with who sent/received, types, timing gaps
+   - activitySummary.daysSinceLastActivity — use for recency signals
+   - activitySummary.maxActivityGapDays — use for stall detection
+   - activitySummary.meetingScheduled — whether a meeting is on the books
+   - activitySummary.activityByType — breakdown of calls, emails, meetings
+3. Contact Context (contacts + contactSummary):
+   - Each contact has title, inferred buying influence (executive/decision_maker/influencer/end_user)
+   - contactSummary.multiThreadCount — number of active contacts
+   - contactSummary.hasExecutive — flag if no exec access
+   - contactSummary.hasDecisionMaker — flag if no DM access
+4. Historical Signals (history):
+   - history.daysInPipeline, history.daysSinceModified
+   - history.staleSignal: "stale" (>7 days), "cooling" (>3 days), "active"
+5. Milestone properties (hubspotMilestones) — use if set, otherwise derive
+6. nextStep, dealRisk, compellingEvent — from HubSpot deal fields
+7. Gong call summary — use for meeting context and buyer sentiment
+
+Use ALL of this automatically. Never ask the user to provide context.
+The system absorbs activity invisibly and uses it to generate smart output.
 `;
 
 const ACTION_INSTRUCTIONS = {

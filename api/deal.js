@@ -6,15 +6,31 @@ import { hubspotFetch } from "../lib/hubspot.js";
 import { buildDealContext } from "../lib/context-builder.js";
 
 const DEAL_PROPERTIES = [
+  // Core deal fields
   "dealname", "amount", "dealstage", "closedate", "pipeline",
   "hubspot_owner_id", "hs_lastmodifieddate", "hs_deal_stage_probability",
   "notes_last_updated", "num_associated_contacts", "description",
+  // Historical signals
+  "hs_date_entered_closedwon", "hs_date_entered_closedlost",
+  "hs_date_entered_appointmentscheduled", "hs_date_entered_qualifiedtobuy",
+  "hs_date_entered_presentationscheduled", "hs_date_entered_decisionmakerboughtin",
+  "hs_date_entered_contractsent",
+  "createdate", "hs_lastmodifieddate",
+  "hs_deal_stage_probability",
+  "hs_is_closed_won", "hs_is_closed",
+  "amount_in_home_currency",
+  // MEDDPICC fields (both prefixed and unprefixed)
   "meddpicc_metrics", "meddpicc_economic_buyer", "meddpicc_decision_criteria",
   "meddpicc_decision_process", "meddpicc_identify_pain", "meddpicc_champion",
   "meddpicc_competition", "meddpicc_paper_process",
   "metrics", "economic_buyer", "decision_criteria",
   "decision_process", "identify_pain", "champion", "competition",
+  // Milestone custom properties
+  "change", "technical", "pricing", "commercial", "security", "executive",
+  // Gong
   "gong_link", "gong_summary", "gong_call_summary",
+  // Next step / risk
+  "next_step", "hs_next_step", "risk", "compelling_event",
 ];
 
 async function fetchDealById(dealId) {
@@ -53,7 +69,7 @@ async function getAssociatedContacts(dealId) {
       ids.map(async (id) => {
         try {
           return await hubspotFetch(
-            `/crm/v3/objects/contacts/${id}?properties=firstname,lastname,email,jobtitle,phone`
+            `/crm/v3/objects/contacts/${id}?properties=firstname,lastname,email,jobtitle,phone,hs_lead_status,lifecyclestage,notes_last_updated,hs_email_last_reply_date,hs_email_last_open_date`
           );
         } catch {
           return null;
