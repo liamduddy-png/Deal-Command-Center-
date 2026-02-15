@@ -2,9 +2,8 @@
 // Fetches deals, MEDDPICC fields, activity, and Gong call summaries
 // NEVER writes or pushes data back to HubSpot
 
-const HUBSPOT_API = "https://api.hubapi.com";
+import { hubspotFetch } from "../lib/hubspot.js";
 
-// Standard deal properties + MEDDPICC custom properties
 const DEAL_PROPERTIES = [
   "dealname", "amount", "dealstage", "closedate", "pipeline",
   "hubspot_owner_id", "hs_lastmodifieddate", "hs_deal_stage_probability",
@@ -17,25 +16,10 @@ const DEAL_PROPERTIES = [
   "gong_link", "gong_summary", "gong_call_summary",
 ].join(",");
 
-async function hubspotGet(path, token) {
-  const res = await fetch(`${HUBSPOT_API}${path}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`HubSpot API ${res.status}: ${text.substring(0, 300)}`);
-  }
-  return res.json();
-}
-
-async function getDealEngagements(dealId, token) {
+async function getDealEngagements(dealId) {
   try {
-    const data = await hubspotGet(
-      `/crm/v4/objects/deals/${dealId}/associations/engagements`,
-      token
+    const data = await hubspotFetch(
+      `/crm/v4/objects/deals/${dealId}/associations/engagements`
     );
     const ids = (data.results || []).slice(0, 10).map((r) => r.toObjectId);
     if (ids.length === 0) return [];
@@ -43,7 +27,7 @@ async function getDealEngagements(dealId, token) {
     const engagements = await Promise.all(
       ids.map(async (id) => {
         try {
-          const eng = await hubspotGet(`/engagements/v1/engagements/${id}`, token);
+          const eng = await hubspotFetch(`/engagements/v1/engagements/${id}`);
           return {
             type: eng.engagement?.type,
             timestamp: eng.engagement?.timestamp,
@@ -61,11 +45,10 @@ async function getDealEngagements(dealId, token) {
   }
 }
 
-async function getGongNotes(dealId, token) {
+async function getGongNotes(dealId) {
   try {
-    const data = await hubspotGet(
-      `/crm/v3/objects/deals/${dealId}/associations/notes`,
-      token
+    const data = await hubspotFetch(
+      `/crm/v3/objects/deals/${dealId}/associations/notes`
     );
     const ids = (data.results || []).slice(0, 5).map((r) => r.id || r.toObjectId);
     if (ids.length === 0) return [];
@@ -73,9 +56,8 @@ async function getGongNotes(dealId, token) {
     const notes = await Promise.all(
       ids.map(async (id) => {
         try {
-          const note = await hubspotGet(
-            `/crm/v3/objects/notes/${id}?properties=hs_note_body,hs_timestamp`,
-            token
+          const note = await hubspotFetch(
+            `/crm/v3/objects/notes/${id}?properties=hs_note_body,hs_timestamp`
           );
           const body = note.properties?.hs_note_body || "";
           if (
@@ -133,17 +115,13 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
 
-  const token = process.env.HUBSPOT_ACCESS_TOKEN;
-  if (!token) {
-    return res.status(500).json({
-      error: "HUBSPOT_ACCESS_TOKEN not configured. Add a HubSpot private app access token to your Vercel environment variables.",
-    });
+  if (!process.env.HUBSPOT_PRIVATE_APP_TOKEN) {
+    return res.status(200).json({ available: false, reason: "HUBSPOT_PRIVATE_APP_TOKEN not configured" });
   }
 
   try {
-    const dealsData = await hubspotGet(
-      `/crm/v3/objects/deals?limit=50&properties=${DEAL_PROPERTIES}`,
-      token
+    const dealsData = await hubspotFetch(
+      `/crm/v3/objects/deals?limit=50&properties=${DEAL_PROPERTIES}`
     );
 
     const deals = await Promise.all(
@@ -151,8 +129,8 @@ export default async function handler(req, res) {
         const props = deal.properties || {};
 
         const [engagements, gongNotes] = await Promise.all([
-          getDealEngagements(deal.id, token),
-          getGongNotes(deal.id, token),
+          getDealEngagements(deal.id),
+          getGongNotes(deal.id),
         ]);
 
         const meddpicc = extractMeddpicc(props);

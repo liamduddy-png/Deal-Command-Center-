@@ -1,9 +1,8 @@
 import useStore from "./store/useStore";
 import Header from "./components/Header";
-import SearchBar from "./components/SearchBar";
+import PipelineRail from "./components/PipelineRail";
+import DealLayout from "./components/DealLayout";
 import AttackPlan from "./components/AttackPlan";
-import DealGrid from "./components/DealGrid";
-import DealDetail from "./components/DealDetail";
 
 export default function App() {
   const selected = useStore((s) => s.selected);
@@ -11,17 +10,22 @@ export default function App() {
   const showAttack = useStore((s) => s.showAttack);
 
   return (
-    <div className="min-h-screen bg-slate-950 font-sans text-slate-50 px-4 sm:px-8 py-8 max-w-7xl mx-auto">
-      {selected ? (
-        <DealDetail />
-      ) : (
-        <>
-          <Header />
-          <SearchBar />
-          {showAttack && mode === "pipeline" && <AttackPlan />}
-          <DealGrid />
-        </>
+    <div className="h-screen flex flex-col bg-[#0E0E0E] font-sans text-slate-50">
+      {/* Top bar */}
+      <Header />
+
+      {/* Attack Plan overlay */}
+      {showAttack && mode === "pipeline" && !selected && (
+        <div className="px-6 pb-2">
+          <AttackPlan />
+        </div>
       )}
+
+      {/* Main layout: PipelineRail + DealLayout */}
+      <div className="flex-1 flex overflow-hidden">
+        <PipelineRail />
+        <DealLayout />
+      </div>
     </div>
   );
 }

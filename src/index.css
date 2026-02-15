@@ -4,41 +4,60 @@
 
 @layer base {
   body {
-    @apply bg-slate-950 text-slate-50 antialiased;
+    background-color: #0E0E0E;
+    color: #E2E2E2;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   ::-webkit-scrollbar {
-    width: 6px;
+    width: 5px;
   }
   ::-webkit-scrollbar-track {
-    @apply bg-transparent;
+    background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    @apply bg-slate-700 rounded-full;
+    background: #262626;
+    border-radius: 4px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-slate-600;
+    background: #333;
   }
 }
 
 @layer components {
   .card {
-    @apply bg-slate-900 border border-slate-800 rounded-xl transition-all duration-200;
+    background: #161616;
+    border: 1px solid #262626;
+    border-radius: 12px;
+    transition: all 0.2s ease;
   }
   .card-hover {
-    @apply card hover:border-slate-700 hover:bg-slate-900/80 hover:shadow-lg hover:shadow-slate-900/50;
+    background: #161616;
+    border: 1px solid #262626;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+  }
+  .card-hover:hover {
+    border-color: #333;
+    background: #1a1a1a;
   }
   .label {
-    @apply text-[10px] uppercase tracking-wider text-slate-500 font-semibold;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #666;
+    font-weight: 600;
   }
   .btn {
     @apply px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer select-none;
   }
   .btn-primary {
-    @apply btn bg-blue-600 hover:bg-blue-500 text-white;
+    @apply btn text-white;
+    background: #D6A84F;
   }
-  .btn-ghost {
-    @apply btn bg-transparent hover:bg-slate-800 text-slate-400 hover:text-slate-200;
+  .btn-primary:hover {
+    background: #c49a45;
   }
   .health-dot {
     @apply inline-block w-2 h-2 rounded-full shrink-0;
@@ -46,7 +65,8 @@
 
   /* Markdown prose inside AI responses */
   .ai-prose h1, .ai-prose h2, .ai-prose h3 {
-    @apply font-semibold text-slate-100 mt-4 mb-2;
+    @apply font-semibold mt-4 mb-2;
+    color: #E2E2E2;
   }
   .ai-prose h1 { @apply text-lg; }
   .ai-prose h2 { @apply text-base; }
@@ -56,12 +76,24 @@
   .ai-prose ul { @apply list-disc; }
   .ai-prose ol { @apply list-decimal; }
   .ai-prose li { @apply leading-relaxed; }
-  .ai-prose strong { @apply text-slate-100 font-semibold; }
-  .ai-prose em { @apply text-slate-300 italic; }
-  .ai-prose code { @apply bg-slate-800 text-blue-300 px-1.5 py-0.5 rounded text-xs font-mono; }
-  .ai-prose pre { @apply bg-slate-800 rounded-lg p-4 mb-3 overflow-x-auto; }
-  .ai-prose pre code { @apply bg-transparent p-0; }
-  .ai-prose blockquote { @apply border-l-2 border-blue-500 pl-4 italic text-slate-400 mb-3; }
-  .ai-prose hr { @apply border-slate-700 my-4; }
-  .ai-prose a { @apply text-blue-400 hover:underline; }
+  .ai-prose strong { color: #E2E2E2; @apply font-semibold; }
+  .ai-prose em { color: #999; @apply italic; }
+  .ai-prose code {
+    background: #1a1a1a;
+    color: #D6A84F;
+    @apply px-1.5 py-0.5 rounded text-xs font-mono;
+  }
+  .ai-prose pre {
+    background: #1a1a1a;
+    @apply rounded-lg p-4 mb-3 overflow-x-auto;
+  }
+  .ai-prose pre code { background: transparent; @apply p-0; }
+  .ai-prose blockquote {
+    border-left: 2px solid #D6A84F;
+    @apply pl-4 italic mb-3;
+    color: #888;
+  }
+  .ai-prose hr { border-color: #262626; @apply my-4; }
+  .ai-prose a { color: #D6A84F; }
+  .ai-prose a:hover { @apply underline; }
 }

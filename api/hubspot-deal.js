@@ -17,7 +17,7 @@ const DEAL_PROPERTIES = [
 ].join(",");
 
 async function searchDealByName(companyName) {
-  const token = process.env.HUBSPOT_ACCESS_TOKEN;
+  const token = process.env.HUBSPOT_PRIVATE_APP_TOKEN;
   const res = await fetch(`https://api.hubapi.com/crm/v3/objects/deals/search`, {
     method: "POST",
     headers: {
@@ -153,8 +153,8 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
 
-  if (!process.env.HUBSPOT_ACCESS_TOKEN) {
-    return res.status(200).json({ available: false, reason: "HUBSPOT_ACCESS_TOKEN not configured" });
+  if (!process.env.HUBSPOT_PRIVATE_APP_TOKEN) {
+    return res.status(200).json({ available: false, reason: "HUBSPOT_PRIVATE_APP_TOKEN not configured" });
   }
 
   const company = req.query.company;

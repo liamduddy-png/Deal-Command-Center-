@@ -2,9 +2,16 @@ import { create } from "zustand";
 import { PIPELINE_DEALS, EXPANSION_DEALS } from "../data/deals";
 import { PIPELINE_ACTIONS, EXPANSION_ACTIONS } from "../data/actions";
 
+// Extract deal ID from HubSpot URL
+// e.g. https://app.hubspot.com/contacts/12345678/deal/98765432
+function extractDealId(url) {
+  const match = url.match(/deal\/(\d+)/);
+  return match ? match[1] : null;
+}
+
 const useStore = create((set, get) => ({
   // View state
-  mode: "pipeline", // "pipeline" | "expansion"
+  mode: "pipeline",
   search: "",
   selected: null,
   showAttack: false,
@@ -34,6 +41,62 @@ const useStore = create((set, get) => ({
     get().fetchDealContext(deal.company);
   },
   goBack: () => set({ selected: null, activeAction: null, aiText: "", loading: false, dealContext: null }),
+
+  // Load deal from pasted HubSpot URL
+  loadDealFromUrl: async (url) => {
+    const dealId = extractDealId(url);
+    if (!dealId) {
+      set({ aiText: "Could not extract deal ID from URL. Expected format: https://app.hubspot.com/.../deal/123456" });
+      return;
+    }
+
+    set({
+      dealContextLoading: true,
+      dealContext: null,
+      activeAction: null,
+      aiText: "",
+      loading: false,
+    });
+
+    try {
+      const res = await fetch(`/api/deal?id=${dealId}`);
+      if (!res.ok) {
+        set({ dealContextLoading: false, aiText: "Failed to fetch deal from HubSpot" });
+        return;
+      }
+      const data = await res.json();
+
+      if (!data.found) {
+        set({ dealContextLoading: false, aiText: "Deal not found in HubSpot" });
+        return;
+      }
+
+      const ctx = data.context;
+      // Create a synthetic deal object from HubSpot data
+      const deal = {
+        id: parseInt(data.dealId),
+        company: ctx.deal.name,
+        contact: ctx.contacts.length > 0
+          ? ctx.contacts.map((c) => c.name).join(", ")
+          : "No contacts",
+        amount: ctx.deal.amount,
+        stage: ctx.deal.stage,
+        closeDate: ctx.deal.closeDate,
+        health: ctx.deal.probability >= 0.7 ? "hot" : ctx.deal.probability >= 0.3 ? "warm" : "cold",
+        lastActivity: ctx.deal.lastModified || "Unknown",
+        ms: null,
+        type: "pipeline",
+      };
+
+      set({
+        selected: deal,
+        dealContext: data,
+        dealContextLoading: false,
+      });
+    } catch (err) {
+      set({ dealContextLoading: false, aiText: "Error: " + err.message });
+    }
+  },
 
   getDeals: () => {
     const { mode, hubspotDeals, useHubspot } = get();
@@ -65,10 +128,10 @@ const useStore = create((set, get) => ({
     return get().getFilteredDeals().reduce((sum, d) => sum + (d.amount || d.arr || 0), 0);
   },
 
-  // Fetch HubSpot context for a single deal
+  // Fetch HubSpot context for a single deal (by company name)
   fetchDealContext: async (companyName) => {
     try {
-      const res = await fetch(`/api/hubspot-deal?company=${encodeURIComponent(companyName)}`);
+      const res = await fetch(`/api/deal?company=${encodeURIComponent(companyName)}`);
       if (!res.ok) {
         set({ dealContextLoading: false });
         return;
@@ -80,14 +143,17 @@ const useStore = create((set, get) => ({
     }
   },
 
-  // AI action — sends { type, context } to server
+  // AI action — sends { type, context } to /api/generate
+  // Claude automatically receives ALL deal context from HubSpot
   runAction: async (action) => {
     const { selected, dealContext, mode } = get();
     if (!selected) return;
 
     set({ activeAction: action.id, loading: true, aiText: "" });
 
-    // Build context object with deal data + HubSpot intel
+    // Build context: merge local deal data with HubSpot intel
+    const hubspot = dealContext?.context || null;
+
     const context = {
       company: selected.company,
       contact: selected.contact,
@@ -104,17 +170,19 @@ const useStore = create((set, get) => ({
       usage: selected.usage || null,
       risk: selected.risk || null,
       projects: selected.projects || null,
-      // HubSpot intel (if available)
-      hubspot: dealContext?.found ? {
-        meddpicc: dealContext.meddpicc || null,
-        gong: dealContext.gong || null,
-        recentActivity: dealContext.recentActivity || [],
-        notes: dealContext.notes || [],
-      } : null,
+      // HubSpot intel (auto-injected, no pasting)
+      meddpicc: hubspot?.meddpicc || null,
+      gong: hubspot?.gong || null,
+      contacts: hubspot?.contacts || [],
+      recentActivity: hubspot?.engagements || [],
+      engagementRecency: hubspot?.engagements?.length > 0
+        ? hubspot.engagements[0].date
+        : null,
+      dealDescription: hubspot?.deal?.description || null,
     };
 
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ type: action.id, context }),
