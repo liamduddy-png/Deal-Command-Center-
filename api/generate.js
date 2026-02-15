@@ -191,21 +191,21 @@ CONSTRAINTS:
 - Change must always be explicit (what they did differently)
 - Must sound like something a rep would actually say on a call
 
-ALLOWED LANGUAGE (implied friction):
-- frustration or disruption
-- lost momentum
-- extra steps
-- re-checking or stopping work
-- slower decisions
-- delays on a tight schedule
-- reactive execution
+You may imply:
+- Frustration or disruption
+- Lost momentum
+- Extra steps
+- Re-checking or stopping work
+- Slower decisions
+- Delays on a tight schedule
+- Reactive execution
 
-NOT ALLOWED:
+You may NOT imply:
 - ROI or cost savings
-- numeric time savings
-- executive mandates
-- buying intent
-- strategic urgency
+- Time savings with numbers
+- Executive pressure
+- Buying intent
+- Strategic urgency
 
 REQUIRED STRUCTURE (all in a single flowing paragraph):
 1. Situation: first name only, company, context
