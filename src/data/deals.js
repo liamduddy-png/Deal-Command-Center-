@@ -87,6 +87,25 @@ export const HEALTH_TEXT_COLORS = {
   monitor: "text-amber-400",
 };
 
+export function getEngagementStatus(engagements) {
+  if (!engagements || engagements.length === 0) {
+    return { label: "No Activity", color: "#777", className: "text-slate-500 bg-slate-500/10 border-slate-500/30" };
+  }
+
+  const latest = engagements[0];
+  const lastDate = new Date(latest.createdAt || latest.date || latest.timestamp);
+  const now = new Date();
+  const diffDays = (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24);
+
+  if (diffDays >= 5) {
+    return { label: "Cooling", color: "#EF4444", className: "text-red-400 bg-red-500/10 border-red-500/30" };
+  }
+  if (diffDays >= 3) {
+    return { label: "Softening", color: "#D6A84F", className: "text-amber-400 bg-amber-500/10 border-amber-500/30" };
+  }
+  return { label: "Active", color: "#22C55E", className: "text-green-400 bg-green-500/10 border-green-500/30" };
+}
+
 export const MILESTONE_COLORS = {
   committed: "bg-green-500",
   fit: "bg-green-500",

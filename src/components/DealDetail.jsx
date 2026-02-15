@@ -4,6 +4,7 @@ import {
   HEALTH_TEXT_COLORS,
   MILESTONE_KEYS,
   MILESTONE_COLORS,
+  getEngagementStatus,
 } from "../data/deals";
 import SmartActions from "./SmartActions";
 import AIResponse from "./AIResponse";
@@ -88,6 +89,14 @@ export default function DealDetail() {
                   HubSpot
                 </span>
               )}
+              {hasHubspot && dealContext.recentActivity && (() => {
+                const status = getEngagementStatus(dealContext.recentActivity);
+                return (
+                  <span className={`text-[10px] border rounded px-1.5 py-0.5 font-medium ${status.className}`}>
+                    {status.label}
+                  </span>
+                );
+              })()}
             </div>
             <p className="text-slate-400 text-sm mt-1 ml-6">{deal.contact}</p>
           </div>
@@ -183,11 +192,16 @@ function HubSpotPanel({ context }) {
 
   if (!hasContent) return null;
 
+  const engStatus = getEngagementStatus(recentActivity);
+
   return (
     <div className="card p-5 mb-6 animate-slide-up border-orange-500/20">
       <div className="flex items-center gap-2 mb-4">
         <span className="text-orange-400 text-sm">&#x1F50C;</span>
         <span className="label text-orange-400">HubSpot Deal Intelligence</span>
+        <span className={`text-[10px] border rounded px-1.5 py-0.5 font-medium ${engStatus.className}`}>
+          {engStatus.label}
+        </span>
         <span className="text-[10px] text-slate-600 ml-auto">Read-only &middot; auto-synced</span>
       </div>
 
