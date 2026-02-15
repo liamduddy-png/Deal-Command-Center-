@@ -472,11 +472,8 @@ function HubSpotPanel({ context }) {
             )}
 
             {/* Timeline */}
-            <div className="relative">
-              {/* Vertical line */}
-              <div className="absolute left-[7px] top-2 bottom-2 w-px" style={{ background: "#333" }} />
-
-              <div className="space-y-0.5">
+            <div>
+              <div className="space-y-1.5">
                 {timelineItems.map((item, i) => {
                   const cfg = getActivityConfig(item.type);
                   const fromName = (item.from || "").replace(/<[^>]+>/, "").trim();
@@ -489,29 +486,23 @@ function HubSpotPanel({ context }) {
                     <div key={`${item.source}-${i}`}>
                       {/* Gap indicator */}
                       {gapBefore && (
-                        <div className="flex items-center gap-2 py-1.5 pl-1">
-                          <div className="w-3.5 flex justify-center">
-                            <div className="w-1.5 h-1.5 rounded-full bg-amber-500/50" />
-                          </div>
-                          <span className="text-[9px] text-amber-500/70 italic">
-                            {gapBefore.days}-day gap
+                        <div className="flex items-center gap-2 py-1 px-2 rounded"
+                          style={{ background: "rgba(245,158,11,0.06)", borderLeft: "3px solid rgba(245,158,11,0.3)" }}
+                        >
+                          <span className="text-[9px] text-amber-500/80 font-medium">
+                            {gapBefore.days}-day gap in activity
                           </span>
                         </div>
                       )}
 
-                      <div className="flex items-start gap-2 py-1.5 pl-1 rounded hover:bg-slate-700/20 transition-colors">
-                        {/* Timeline dot */}
-                        <div className="w-3.5 flex justify-center shrink-0 mt-1">
-                          <div
-                            className="w-2.5 h-2.5 rounded-full border-2"
-                            style={{ borderColor: cfg.color, background: item.source === "gmail" ? cfg.color : "transparent" }}
-                          />
-                        </div>
-
+                      <div
+                        className="flex items-start gap-2 py-2 pl-1 pr-2 rounded-lg transition-colors"
+                        style={{ background: cfg.bg, borderLeft: `3px solid ${cfg.color}` }}
+                      >
                         {/* Type badge */}
                         <span
                           className="text-[9px] font-bold shrink-0 w-14 text-center rounded py-0.5 mt-0.5"
-                          style={{ background: cfg.bg, color: cfg.color }}
+                          style={{ background: cfg.color + "22", color: cfg.color }}
                         >
                           {cfg.label.toUpperCase()}
                         </span>
@@ -519,31 +510,34 @@ function HubSpotPanel({ context }) {
                         {/* Content */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5">
-                            <span className="text-xs text-slate-300 font-medium truncate">
+                            <span
+                              className="text-xs font-medium truncate"
+                              style={{ color: cfg.color }}
+                            >
                               {item.subject || "Activity"}
                             </span>
                             {item.durationMin && (
-                              <span className="text-[9px] text-slate-600 shrink-0">
+                              <span className="text-[9px] text-slate-500 shrink-0">
                                 {item.durationMin}min
                               </span>
                             )}
                           </div>
                           {(fromName || toName) && (
-                            <div className="text-[10px] text-slate-500 truncate mt-0.5">
+                            <div className="text-[10px] text-slate-400 truncate mt-0.5">
                               {fromName && toName
                                 ? `${fromName} \u2192 ${toName}`
                                 : fromName || toName}
                             </div>
                           )}
                           {item.preview && item.type !== "EMAIL" && item.type !== "GMAIL" && (
-                            <div className="text-[10px] text-slate-600 truncate mt-0.5">
+                            <div className="text-[10px] text-slate-500 truncate mt-0.5">
                               {item.preview.substring(0, 120)}
                             </div>
                           )}
                         </div>
 
                         {/* Date */}
-                        <span className="text-[10px] text-slate-600 shrink-0 mt-0.5">
+                        <span className="text-[10px] text-slate-500 shrink-0 mt-0.5 font-medium">
                           {item.date}
                         </span>
                       </div>
