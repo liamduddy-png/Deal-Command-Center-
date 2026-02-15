@@ -38,10 +38,11 @@ export default function DealLayout() {
   const runAction = useStore((s) => s.runAction);
   const loading = useStore((s) => s.loading);
   const loadDealFromUrl = useStore((s) => s.loadDealFromUrl);
+  const aiText = useStore((s) => s.aiText);
   const [urlInput, setUrlInput] = useState("");
   const isPipeline = mode === "pipeline";
 
-  // No deal selected — show URL input
+  // No deal selected — show URL input or loading state
   if (!deal) {
     return (
       <div className="flex-1 flex items-center justify-center p-8">
@@ -52,35 +53,55 @@ export default function DealLayout() {
           <p className="text-sm text-slate-500 mb-6">
             Select a deal from the pipeline, or paste a HubSpot deal URL
           </p>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="https://app.hubspot.com/.../deal/123456"
-              value={urlInput}
-              onChange={(e) => setUrlInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && urlInput.trim()) {
-                  loadDealFromUrl(urlInput.trim());
-                  setUrlInput("");
-                }
-              }}
-              className="flex-1 px-4 py-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-50 text-sm placeholder-slate-600 outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/30 transition-all"
-            />
-            <button
-              onClick={() => {
-                if (urlInput.trim()) {
-                  loadDealFromUrl(urlInput.trim());
-                  setUrlInput("");
-                }
-              }}
-              className="px-5 py-3 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-xl transition-colors"
-            >
-              Load
-            </button>
-          </div>
-          <p className="text-xs text-slate-600 mt-3">
-            Deal ID will be extracted automatically
-          </p>
+
+          {dealContextLoading ? (
+            <div className="py-8">
+              <div className="inline-block w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mb-4" />
+              <p className="text-sm text-slate-400">Loading deal from HubSpot...</p>
+            </div>
+          ) : (
+            <>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="https://app.hubspot.com/.../deal/123456"
+                  value={urlInput}
+                  onChange={(e) => {
+                    setUrlInput(e.target.value);
+                    if (aiText) useStore.setState({ aiText: "" });
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && urlInput.trim()) {
+                      loadDealFromUrl(urlInput.trim());
+                      setUrlInput("");
+                    }
+                  }}
+                  className="flex-1 px-4 py-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-50 text-sm placeholder-slate-600 outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/30 transition-all"
+                />
+                <button
+                  onClick={() => {
+                    if (urlInput.trim()) {
+                      loadDealFromUrl(urlInput.trim());
+                      setUrlInput("");
+                    }
+                  }}
+                  className="px-5 py-3 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-xl transition-colors"
+                >
+                  Load
+                </button>
+              </div>
+              <p className="text-xs text-slate-600 mt-3">
+                Deal ID will be extracted automatically
+              </p>
+            </>
+          )}
+
+          {/* Show error messages when deal load fails */}
+          {!dealContextLoading && aiText && !deal && (
+            <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+              <p className="text-sm text-red-400">{aiText}</p>
+            </div>
+          )}
         </div>
       </div>
     );
