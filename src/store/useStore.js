@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { PIPELINE_DEALS, EXPANSION_DEALS } from "../data/deals";
 import { PIPELINE_ACTIONS, EXPANSION_ACTIONS } from "../data/actions";
-import { getPrompt } from "../data/prompts";
 
 const useStore = create((set, get) => ({
   // View state
@@ -16,7 +15,7 @@ const useStore = create((set, get) => ({
   loading: false,
 
   // HubSpot deal context (fetched per-deal)
-  dealContext: null, // { available, found, meddpicc, gong, recentActivity, notes, contextBlock }
+  dealContext: null,
   dealContextLoading: false,
 
   // HubSpot state (all deals)
@@ -32,7 +31,6 @@ const useStore = create((set, get) => ({
 
   selectDeal: (deal) => {
     set({ selected: deal, activeAction: null, aiText: "", loading: false, dealContext: null, dealContextLoading: true });
-    // Fetch HubSpot context for this deal
     get().fetchDealContext(deal.company);
   },
   goBack: () => set({ selected: null, activeAction: null, aiText: "", loading: false, dealContext: null }),
@@ -82,30 +80,44 @@ const useStore = create((set, get) => ({
     }
   },
 
-  // AI action — includes HubSpot context in prompt
+  // AI action — sends { type, context } to server
   runAction: async (action) => {
-    const { selected, dealContext } = get();
+    const { selected, dealContext, mode } = get();
     if (!selected) return;
 
     set({ activeAction: action.id, loading: true, aiText: "" });
 
-    // Build the prompt with deal data
-    let prompt = getPrompt(action.id, selected);
-
-    // Inject HubSpot context if available
-    if (dealContext?.found && dealContext?.contextBlock) {
-      prompt = `${prompt}\n\n---\n\nHere is real deal intelligence from HubSpot CRM. Use this data to make your response specific and actionable:\n\n${dealContext.contextBlock}`;
-    }
+    // Build context object with deal data + HubSpot intel
+    const context = {
+      company: selected.company,
+      contact: selected.contact,
+      amount: selected.amount || selected.arr || 0,
+      stage: selected.stage || null,
+      closeDate: selected.closeDate || null,
+      health: selected.health,
+      lastActivity: selected.lastActivity || null,
+      milestones: selected.ms || null,
+      mode,
+      // Expansion fields
+      arr: selected.arr || null,
+      renewalDate: selected.renewalDate || null,
+      usage: selected.usage || null,
+      risk: selected.risk || null,
+      projects: selected.projects || null,
+      // HubSpot intel (if available)
+      hubspot: dealContext?.found ? {
+        meddpicc: dealContext.meddpicc || null,
+        gong: dealContext.gong || null,
+        recentActivity: dealContext.recentActivity || [],
+        notes: dealContext.notes || [],
+      } : null,
+    };
 
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1500,
-          messages: [{ role: "user", content: prompt }],
-        }),
+        body: JSON.stringify({ type: action.id, context }),
       });
 
       if (!res.ok) {
@@ -115,12 +127,8 @@ const useStore = create((set, get) => ({
 
       const data = await res.json();
 
-      if (data?.content) {
-        const text = data.content
-          .filter((c) => c.type === "text")
-          .map((c) => c.text)
-          .join("");
-        set({ aiText: text || "Empty response", loading: false });
+      if (data?.output) {
+        set({ aiText: data.output, loading: false });
       } else if (data?.error) {
         set({ aiText: "API Error: " + (data.error.message || JSON.stringify(data.error)), loading: false });
       } else {

@@ -1,39 +1,24 @@
-// READ-ONLY: Fetch HubSpot context for a single deal by company name
+// READ-ONLY: Fetch HubSpot context for a single deal
 // Returns activity timeline, MEDDPICC fields, Gong call summaries
 // NEVER writes to HubSpot
 
-const HUBSPOT_API = "https://api.hubapi.com";
+import { hubspotFetch } from "../lib/hubspot.js";
 
 const DEAL_PROPERTIES = [
   "dealname", "amount", "dealstage", "closedate", "pipeline",
   "hubspot_owner_id", "hs_lastmodifieddate", "hs_deal_stage_probability",
   "notes_last_updated", "num_associated_contacts", "description",
-  // MEDDPICC
   "meddpicc_metrics", "meddpicc_economic_buyer", "meddpicc_decision_criteria",
   "meddpicc_decision_process", "meddpicc_identify_pain", "meddpicc_champion",
   "meddpicc_competition", "meddpicc_paper_process",
   "metrics", "economic_buyer", "decision_criteria",
   "decision_process", "identify_pain", "champion", "competition",
-  // Gong
   "gong_link", "gong_summary", "gong_call_summary",
 ].join(",");
 
-async function hubspotGet(path, token) {
-  const res = await fetch(`${HUBSPOT_API}${path}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`HubSpot ${res.status}: ${text.substring(0, 300)}`);
-  }
-  return res.json();
-}
-
-async function searchDealByName(companyName, token) {
-  const res = await fetch(`${HUBSPOT_API}/crm/v3/objects/deals/search`, {
+async function searchDealByName(companyName) {
+  const token = process.env.HUBSPOT_ACCESS_TOKEN;
+  const res = await fetch(`https://api.hubapi.com/crm/v3/objects/deals/search`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -58,11 +43,10 @@ async function searchDealByName(companyName, token) {
   return res.json();
 }
 
-async function getDealEngagements(dealId, token) {
+async function getDealEngagements(dealId) {
   try {
-    const assocData = await hubspotGet(
-      `/crm/v4/objects/deals/${dealId}/associations/engagements`,
-      token
+    const assocData = await hubspotFetch(
+      `/crm/v4/objects/deals/${dealId}/associations/engagements`
     );
     const ids = (assocData.results || []).slice(0, 15).map((r) => r.toObjectId);
     if (ids.length === 0) return [];
@@ -70,7 +54,7 @@ async function getDealEngagements(dealId, token) {
     const engagements = await Promise.all(
       ids.map(async (id) => {
         try {
-          const eng = await hubspotGet(`/engagements/v1/engagements/${id}`, token);
+          const eng = await hubspotFetch(`/engagements/v1/engagements/${id}`);
           const meta = eng.metadata || {};
           return {
             type: eng.engagement?.type,
@@ -97,11 +81,10 @@ async function getDealEngagements(dealId, token) {
   }
 }
 
-async function getDealNotes(dealId, token) {
+async function getDealNotes(dealId) {
   try {
-    const assocData = await hubspotGet(
-      `/crm/v4/objects/deals/${dealId}/associations/notes`,
-      token
+    const assocData = await hubspotFetch(
+      `/crm/v4/objects/deals/${dealId}/associations/notes`
     );
     const ids = (assocData.results || []).slice(0, 10).map((r) => r.toObjectId);
     if (ids.length === 0) return [];
@@ -109,9 +92,8 @@ async function getDealNotes(dealId, token) {
     const notes = await Promise.all(
       ids.map(async (id) => {
         try {
-          const note = await hubspotGet(
-            `/crm/v3/objects/notes/${id}?properties=hs_note_body,hs_timestamp,hs_created_by`,
-            token
+          const note = await hubspotFetch(
+            `/crm/v3/objects/notes/${id}?properties=hs_note_body,hs_timestamp,hs_created_by`
           );
           return {
             timestamp: note.properties?.hs_timestamp,
@@ -171,8 +153,7 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
 
-  const token = process.env.HUBSPOT_ACCESS_TOKEN;
-  if (!token) {
+  if (!process.env.HUBSPOT_ACCESS_TOKEN) {
     return res.status(200).json({ available: false, reason: "HUBSPOT_ACCESS_TOKEN not configured" });
   }
 
@@ -182,8 +163,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Search for the deal by company name
-    const searchResults = await searchDealByName(company, token);
+    const searchResults = await searchDealByName(company);
     const deals = searchResults.results || [];
 
     if (deals.length === 0) {
@@ -195,15 +175,14 @@ export default async function handler(req, res) {
       });
     }
 
-    // Use the best match (first result)
     const deal = deals[0];
     const props = deal.properties || {};
     const dealId = deal.id;
 
     // Fetch engagements and notes in parallel
     const [engagements, notes] = await Promise.all([
-      getDealEngagements(dealId, token),
-      getDealNotes(dealId, token),
+      getDealEngagements(dealId),
+      getDealNotes(dealId),
     ]);
 
     const meddpicc = extractMeddpicc(props);
@@ -221,16 +200,13 @@ export default async function handler(req, res) {
         body.includes("call recording") || body.includes("call brief"));
     });
 
-    // Build a text context block for Claude
+    // Build context block for Claude
     let contextBlock = `## HubSpot Deal Intelligence: ${props.dealname || company}\n\n`;
-
-    // Deal properties
     contextBlock += `**Deal Stage:** ${props.dealstage || "N/A"}\n`;
     contextBlock += `**Amount:** $${parseFloat(props.amount || 0).toLocaleString()}\n`;
     contextBlock += `**Close Date:** ${props.closedate ? props.closedate.split("T")[0] : "N/A"}\n`;
     contextBlock += `**Last Modified:** ${props.hs_lastmodifieddate ? props.hs_lastmodifieddate.split("T")[0] : "N/A"}\n\n`;
 
-    // MEDDPICC
     if (meddpicc) {
       contextBlock += `### MEDDPICC Fields\n`;
       for (const [key, val] of Object.entries(meddpicc)) {
@@ -240,7 +216,6 @@ export default async function handler(req, res) {
       contextBlock += "\n";
     }
 
-    // Gong call summaries
     if (gongNotes.length > 0 || props.gong_summary || props.gong_call_summary) {
       contextBlock += `### Gong Call Intelligence\n`;
       if (props.gong_link) contextBlock += `Gong Link: ${props.gong_link}\n`;
@@ -252,7 +227,6 @@ export default async function handler(req, res) {
       contextBlock += "\n";
     }
 
-    // Recent activity
     if (engagements.length > 0) {
       contextBlock += `### Recent Activity (${engagements.length} engagements)\n`;
       for (const eng of engagements.slice(0, 8)) {
@@ -260,7 +234,6 @@ export default async function handler(req, res) {
       }
     }
 
-    // Notes
     if (otherNotes.length > 0) {
       contextBlock += `### Notes\n`;
       for (const note of otherNotes.slice(0, 5)) {
@@ -285,6 +258,7 @@ export default async function handler(req, res) {
         date: e.timestamp ? new Date(e.timestamp).toISOString().split("T")[0] : null,
         subject: e.subject || e.title || "",
         preview: (e.body || "").substring(0, 200),
+        createdAt: e.createdAt || e.timestamp,
       })),
       notes: otherNotes.slice(0, 5).map((n) => ({
         date: n.timestamp ? new Date(n.timestamp).toISOString().split("T")[0] : null,
