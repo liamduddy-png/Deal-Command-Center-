@@ -87,6 +87,36 @@ export const HEALTH_TEXT_COLORS = {
   monitor: "text-amber-400",
 };
 
+// Maps milestone property values from HubSpot to colors
+export function getMilestoneColor(value) {
+  if (!value) return "#334155"; // slate-700 — not set
+
+  const v = String(value).toLowerCase().trim();
+
+  // Green — completed / committed / validated
+  if (["committed", "fit", "closure", "complete", "msa", "validated", "confirmed", "done", "yes", "true"].includes(v)) {
+    return "#22C55E";
+  }
+
+  // Red — not validated / blocked / at risk
+  if (["not_validated", "not validated", "blocked", "no", "false", "at_risk", "at risk", "failed"].includes(v)) {
+    return "#EF4444";
+  }
+
+  // Amber — in progress / partial
+  if (["eval", "aware", "nda", "started", "in_progress", "in progress", "partial", "pending"].includes(v)) {
+    return "#F59E0B";
+  }
+
+  // Slate — not started / not given
+  if (["not_given", "not given", "not_started", "not started", "none", "n/a"].includes(v)) {
+    return "#64748B";
+  }
+
+  // Default — has a value but unrecognized, treat as in-progress
+  return "#F59E0B";
+}
+
 export function getEngagementStatus(engagements) {
   if (!engagements || engagements.length === 0) {
     return { label: "No Activity", color: "#777", className: "text-slate-500 bg-slate-500/10 border-slate-500/30" };

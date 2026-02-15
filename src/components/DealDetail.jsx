@@ -5,6 +5,7 @@ import {
   MILESTONE_KEYS,
   MILESTONE_COLORS,
   getEngagementStatus,
+  getMilestoneColor,
 } from "../data/deals";
 import SmartActions from "./SmartActions";
 import AIResponse from "./AIResponse";
@@ -137,18 +138,24 @@ export default function DealDetail() {
                   <div className="flex gap-1.5">
                     {MILESTONE_KEYS.map((k) => {
                       const v = deal.ms[k];
+                      const color = getMilestoneColor(v);
                       return (
                         <div key={k} className="flex-1 group/ms">
                           <div
-                            className={`h-1.5 rounded-full ${
-                              v
-                                ? MILESTONE_COLORS[v] || "bg-slate-700"
-                                : "bg-slate-800"
-                            }`}
+                            className="h-1.5 rounded-full"
+                            style={{ backgroundColor: color }}
                           />
                           <div className="text-[9px] text-slate-600 mt-1 text-center">
                             {MILESTONE_LABELS[k]}
                           </div>
+                          {v && (
+                            <div
+                              className="text-[8px] mt-0.5 text-center capitalize"
+                              style={{ color }}
+                            >
+                              {v.replace(/_/g, " ")}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
