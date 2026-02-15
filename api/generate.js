@@ -334,6 +334,43 @@ Include: opening hook, discovery questions, value props, competitive positioning
 First, use your HubSpot tools to see what's already known about this deal.
 Cover: company size, construction verticals, technology stack, pain points.`,
 
+  activity_timeline: `You are building a complete activity timeline for this deal that maps all touchpoints to the deal cycle.
+First, use your HubSpot tools to find this deal and pull ALL contacts and engagements.
+
+BUILD A CHRONOLOGICAL TIMELINE that includes:
+1. **Deal created** — when the deal entered the pipeline
+2. **Emails** — every email sent/received, who sent it, subject, key content
+3. **Calls** — every call logged, duration, who was on it, what was discussed
+4. **Meetings** — every meeting (scheduled and completed), attendees, agenda/outcome
+5. **Notes** — any internal notes logged
+6. **Stage changes** — if detectable from timestamps or context
+
+If gmailEmails are provided, merge them into the timeline. Gmail emails are the actual sent/received emails — they may overlap with HubSpot engagements. Deduplicate by date+subject when possible.
+
+FORMAT:
+Use a clean chronological format, newest first:
+
+**[DATE] — [TYPE ICON] [TYPE]**
+[Who] → [Who] | [Duration if call/meeting]
+[Subject or title]
+[Key content: what was discussed, promised, or decided — 1-2 lines max]
+[Signal: momentum indicator if relevant]
+
+TYPE ICONS:
+- Email: use "Email"
+- Call: use "Call"
+- Meeting: use "Meeting"
+- Note: use "Note"
+
+AFTER THE TIMELINE, add a DEAL CYCLE ANALYSIS section:
+1. **Engagement Pattern** — frequency trend (accelerating, steady, decelerating, stalled)
+2. **Channel Mix** — breakdown of emails vs calls vs meetings. Flag if too email-heavy (no calls = lower conviction)
+3. **Key Moments** — 2-3 inflection points where the deal moved forward or stalled
+4. **Activity Gaps** — any periods of 7+ days with no activity, and what happened after
+5. **Contact Coverage** — who's been engaged, who hasn't, who needs to be looped in
+6. **Momentum Score** — current deal velocity based on recent activity pattern
+7. **Recommendation** — what the next touchpoint should be (call, meeting, email) and why`,
+
   deal_story: `You are writing a deal narrative for leadership review.
 First, use your HubSpot tools to pull full deal history and activity.
 Cover: origin, champion journey, competitive dynamics, blockers, path to win.`,

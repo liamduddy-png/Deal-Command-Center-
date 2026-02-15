@@ -275,11 +275,96 @@ export default function DealLayout() {
   );
 }
 
+const ACTIVITY_TYPE_CONFIG = {
+  EMAIL: { icon: "\u2709\uFE0F", label: "Email", color: "#4285F4", bg: "rgba(66,133,244,0.1)" },
+  INCOMING_EMAIL: { icon: "\u2709\uFE0F", label: "Email", color: "#4285F4", bg: "rgba(66,133,244,0.1)" },
+  CALL: { icon: "\uD83D\uDCDE", label: "Call", color: "#34A853", bg: "rgba(52,168,83,0.1)" },
+  MEETING: { icon: "\uD83D\uDCC5", label: "Meeting", color: "#FBBC04", bg: "rgba(251,188,4,0.1)" },
+  NOTE: { icon: "\uD83D\uDCDD", label: "Note", color: "#9AA0A6", bg: "rgba(154,160,166,0.1)" },
+  TASK: { icon: "\u2611\uFE0F", label: "Task", color: "#EA4335", bg: "rgba(234,67,53,0.1)" },
+  GMAIL: { icon: "\u2709\uFE0F", label: "Gmail", color: "#4285F4", bg: "rgba(66,133,244,0.15)" },
+};
+
+function getActivityConfig(type) {
+  return ACTIVITY_TYPE_CONFIG[(type || "").toUpperCase()] || ACTIVITY_TYPE_CONFIG.NOTE;
+}
+
 function HubSpotPanel({ context }) {
-  const { meddpicc, gong, engagements, contacts } = context;
+  const { meddpicc, gong, engagements, contacts, history, activitySummary } = context;
+  const gmailEmails = useStore((s) => s.gmailEmails);
+  const gmailConnected = useStore((s) => s.gmailConnected);
+  const deal = useStore((s) => s.selected);
   const hasContent = meddpicc || gong?.summary || engagements?.length > 0;
 
   if (!hasContent) return null;
+
+  // Build unified timeline: HubSpot engagements + Gmail emails
+  const timelineItems = [];
+
+  // Add HubSpot engagements
+  if (engagements?.length > 0) {
+    for (const eng of engagements) {
+      timelineItems.push({
+        source: "hubspot",
+        type: (eng.type || "NOTE").toUpperCase(),
+        timestamp: eng.date ? new Date(eng.date).getTime() : 0,
+        date: eng.date || "",
+        subject: eng.subject || eng.preview || "Activity",
+        from: eng.from || "",
+        to: eng.to || "",
+        preview: eng.preview || "",
+        durationMin: eng.durationMin || null,
+      });
+    }
+  }
+
+  // Merge Gmail emails (deduplicate by matching date + subject)
+  if (gmailConnected && gmailEmails.length > 0) {
+    for (const email of gmailEmails) {
+      const emailDate = new Date(email.timestamp).toISOString().split("T")[0];
+      const isDuplicate = timelineItems.some(
+        (t) => t.source === "hubspot" && t.type === "EMAIL" && t.date === emailDate &&
+          t.subject && email.subject && t.subject.toLowerCase().includes(email.subject.toLowerCase().substring(0, 20))
+      );
+      if (!isDuplicate) {
+        timelineItems.push({
+          source: "gmail",
+          type: "GMAIL",
+          timestamp: email.timestamp,
+          date: emailDate,
+          subject: email.subject,
+          from: email.from,
+          to: email.to,
+          preview: email.snippet || "",
+          isSent: email.isSent,
+        });
+      }
+    }
+  }
+
+  // Sort newest first
+  timelineItems.sort((a, b) => b.timestamp - a.timestamp);
+
+  // Compute activity stats
+  const typeCounts = {};
+  for (const item of timelineItems) {
+    const key = item.type === "GMAIL" ? "EMAIL" : item.type;
+    typeCounts[key] = (typeCounts[key] || 0) + 1;
+  }
+
+  // Detect activity gaps (7+ days)
+  const gaps = [];
+  for (let i = 0; i < timelineItems.length - 1; i++) {
+    const gapDays = Math.floor((timelineItems[i].timestamp - timelineItems[i + 1].timestamp) / 86400000);
+    if (gapDays >= 7) {
+      gaps.push({ afterDate: timelineItems[i + 1].date, beforeDate: timelineItems[i].date, days: gapDays });
+    }
+  }
+
+  // Deal lifecycle markers
+  const createdDate = history?.createdDate || null;
+  const closeDate = deal?.closeDate || null;
+  const daysInPipeline = history?.daysInPipeline || null;
 
   return (
     <div className="card p-5 mb-5 border-orange-500/20">
@@ -341,26 +426,131 @@ function HubSpotPanel({ context }) {
           </div>
         )}
 
-        {/* Recent Activity */}
-        {engagements?.length > 0 && (
+        {/* Activity Timeline */}
+        {timelineItems.length > 0 && (
           <div className="bg-slate-800/50 rounded-lg p-4 lg:col-span-2">
-            <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
-              Recent Activity
+            <div className="flex items-center gap-3 mb-3">
+              <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                Activity Timeline
+              </div>
+              {/* Activity type badges */}
+              <div className="flex gap-1.5 ml-auto">
+                {Object.entries(typeCounts).map(([type, count]) => {
+                  const cfg = getActivityConfig(type);
+                  return (
+                    <span
+                      key={type}
+                      className="text-[9px] font-medium rounded px-1.5 py-0.5"
+                      style={{ background: cfg.bg, color: cfg.color }}
+                    >
+                      {cfg.label} {count}
+                    </span>
+                  );
+                })}
+              </div>
             </div>
-            <div className="space-y-2">
-              {engagements.slice(0, 5).map((act, i) => (
-                <div key={i} className="flex items-start gap-2">
-                  <span className="text-[10px] text-slate-600 w-20 shrink-0 mt-0.5">
-                    {act.date || ""}
+
+            {/* Deal lifecycle bar */}
+            {(createdDate || closeDate) && (
+              <div className="flex items-center gap-2 mb-3 px-1">
+                {createdDate && (
+                  <span className="text-[9px] text-slate-600">
+                    Created {createdDate}
                   </span>
-                  <span className="text-[10px] text-slate-500 uppercase w-12 shrink-0 mt-0.5">
-                    {act.type || ""}
+                )}
+                {daysInPipeline != null && (
+                  <span className="text-[9px] text-slate-600">
+                    &middot; {daysInPipeline}d in pipeline
                   </span>
-                  <span className="text-xs text-slate-300 truncate">
-                    {act.subject || act.preview || "Activity"}
+                )}
+                {closeDate && (
+                  <span className="text-[9px] text-slate-600 ml-auto">
+                    Close {closeDate}
                   </span>
-                </div>
-              ))}
+                )}
+              </div>
+            )}
+
+            {/* Timeline */}
+            <div className="relative">
+              {/* Vertical line */}
+              <div className="absolute left-[7px] top-2 bottom-2 w-px" style={{ background: "#333" }} />
+
+              <div className="space-y-0.5">
+                {timelineItems.map((item, i) => {
+                  const cfg = getActivityConfig(item.type);
+                  const fromName = (item.from || "").replace(/<[^>]+>/, "").trim();
+                  const toName = (item.to || "").replace(/<[^>]+>/, "").trim();
+
+                  // Check if there's a gap before this item
+                  const gapBefore = i > 0 ? gaps.find((g) => g.afterDate === item.date) : null;
+
+                  return (
+                    <div key={`${item.source}-${i}`}>
+                      {/* Gap indicator */}
+                      {gapBefore && (
+                        <div className="flex items-center gap-2 py-1.5 pl-1">
+                          <div className="w-3.5 flex justify-center">
+                            <div className="w-1.5 h-1.5 rounded-full bg-amber-500/50" />
+                          </div>
+                          <span className="text-[9px] text-amber-500/70 italic">
+                            {gapBefore.days}-day gap
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="flex items-start gap-2 py-1.5 pl-1 rounded hover:bg-slate-700/20 transition-colors">
+                        {/* Timeline dot */}
+                        <div className="w-3.5 flex justify-center shrink-0 mt-1">
+                          <div
+                            className="w-2.5 h-2.5 rounded-full border-2"
+                            style={{ borderColor: cfg.color, background: item.source === "gmail" ? cfg.color : "transparent" }}
+                          />
+                        </div>
+
+                        {/* Type badge */}
+                        <span
+                          className="text-[9px] font-bold shrink-0 w-14 text-center rounded py-0.5 mt-0.5"
+                          style={{ background: cfg.bg, color: cfg.color }}
+                        >
+                          {cfg.label.toUpperCase()}
+                        </span>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs text-slate-300 font-medium truncate">
+                              {item.subject || "Activity"}
+                            </span>
+                            {item.durationMin && (
+                              <span className="text-[9px] text-slate-600 shrink-0">
+                                {item.durationMin}min
+                              </span>
+                            )}
+                          </div>
+                          {(fromName || toName) && (
+                            <div className="text-[10px] text-slate-500 truncate mt-0.5">
+                              {fromName && toName
+                                ? `${fromName} \u2192 ${toName}`
+                                : fromName || toName}
+                            </div>
+                          )}
+                          {item.preview && item.type !== "EMAIL" && item.type !== "GMAIL" && (
+                            <div className="text-[10px] text-slate-600 truncate mt-0.5">
+                              {item.preview.substring(0, 120)}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Date */}
+                        <span className="text-[10px] text-slate-600 shrink-0 mt-0.5">
+                          {item.date}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
