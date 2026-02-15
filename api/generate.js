@@ -185,11 +185,14 @@ Use the contact titles to determine the audience role (PM/Super, Ops, Executive)
 PURPOSE: Create a customer story that sounds credible on a jobsite — not a marketing case study.
 
 CONSTRAINTS:
-- Use construction language only
-- Do NOT invent facts, metrics, timelines, ROI, urgency, or outcomes
-- Do NOT use salesy language — never say "pain"
+- Use construction language only (PMs, supers, field, drawings, specs, schedule, execution)
+- Never invent facts, metrics, timelines, ROI, urgency, or outcomes
+- Never use salesy language — do not say "pain"
+- Stories may include implied operational dynamics, but never invented results
 - Change must always be explicit (what they did differently)
-- Must sound like something a rep would actually say on a call
+- Everything must pass the jobsite smell test — would a rep actually say this on a call?
+- If something is unclear: use implied but safe language, or label it as unknown
+- Never smooth gaps with optimism or marketing phrasing
 
 You may imply:
 - Frustration or disruption
