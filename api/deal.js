@@ -65,18 +65,41 @@ async function getAssociatedContacts(dealId) {
     const ids = (assocData.results || []).slice(0, 10).map((r) => r.toObjectId);
     if (ids.length === 0) return [];
 
-    const contacts = await Promise.all(
-      ids.map(async (id) => {
-        try {
-          return await hubspotFetch(
-            `/crm/v3/objects/contacts/${id}?properties=firstname,lastname,email,jobtitle,phone,hs_lead_status,lifecyclestage,notes_last_updated,hs_email_last_reply_date,hs_email_last_open_date`
-          );
-        } catch {
-          return null;
-        }
-      })
+    // Batch read contacts instead of individual fetches
+    const batchData = await hubspotFetch(`/crm/v3/objects/contacts/batch/read`, {
+      method: "POST",
+      body: JSON.stringify({
+        properties: [
+          "firstname", "lastname", "email", "jobtitle", "phone",
+          "hs_lead_status", "lifecyclestage", "notes_last_updated",
+          "hs_email_last_reply_date", "hs_email_last_open_date",
+        ],
+        inputs: ids.map((id) => ({ id: String(id) })),
+      }),
+    });
+    return batchData.results || [];
+  } catch {
+    return [];
+  }
+}
+
+// Fetch engagement IDs for a specific type, then batch read properties
+async function fetchEngagementType(dealId, objectType, properties) {
+  try {
+    const assocData = await hubspotFetch(
+      `/crm/v4/objects/deals/${dealId}/associations/${objectType}`
     );
-    return contacts.filter(Boolean);
+    const ids = (assocData.results || []).slice(0, 10).map((r) => r.toObjectId);
+    if (ids.length === 0) return [];
+
+    const batchData = await hubspotFetch(`/crm/v3/objects/${objectType}/batch/read`, {
+      method: "POST",
+      body: JSON.stringify({
+        properties,
+        inputs: ids.map((id) => ({ id: String(id) })),
+      }),
+    });
+    return (batchData.results || []).map((r) => ({ ...r, _engType: objectType }));
   } catch {
     return [];
   }
@@ -84,37 +107,92 @@ async function getAssociatedContacts(dealId) {
 
 async function getEngagements(dealId) {
   try {
-    const assocData = await hubspotFetch(
-      `/crm/v4/objects/deals/${dealId}/associations/engagements`
-    );
-    const ids = (assocData.results || []).slice(0, 15).map((r) => r.toObjectId);
-    if (ids.length === 0) return [];
+    // Fetch all engagement types in parallel
+    const [notes, calls, emails, meetings] = await Promise.all([
+      fetchEngagementType(dealId, "notes", [
+        "hs_timestamp", "hs_note_body",
+      ]),
+      fetchEngagementType(dealId, "calls", [
+        "hs_timestamp", "hs_call_title", "hs_call_body",
+        "hs_call_disposition", "hs_call_duration",
+      ]),
+      fetchEngagementType(dealId, "emails", [
+        "hs_timestamp", "hs_email_subject", "hs_email_text",
+        "hs_email_from_email", "hs_email_to_email",
+      ]),
+      fetchEngagementType(dealId, "meetings", [
+        "hs_timestamp", "hs_meeting_title", "hs_meeting_body",
+        "hs_meeting_start_time", "hs_meeting_end_time",
+      ]),
+    ]);
 
-    const engagements = await Promise.all(
-      ids.map(async (id) => {
-        try {
-          const eng = await hubspotFetch(`/engagements/v1/engagements/${id}`);
-          const meta = eng.metadata || {};
-          return {
-            type: eng.engagement?.type,
-            timestamp: eng.engagement?.timestamp,
-            createdAt: eng.engagement?.createdAt,
-            body: (meta.body || meta.text || "").substring(0, 800),
-            subject: meta.subject || "",
-            from: meta.from?.email || "",
-            to: (meta.to || []).map((t) => t.email).join(", "),
-            title: meta.title || "",
-            disposition: meta.disposition || "",
-            durationMs: meta.durationMilliseconds || 0,
-          };
-        } catch {
-          return null;
-        }
-      })
-    );
-    return engagements
-      .filter(Boolean)
-      .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    // Normalize each type into a common format
+    const all = [];
+
+    for (const n of notes) {
+      const p = n.properties || {};
+      all.push({
+        type: "NOTE",
+        timestamp: p.hs_timestamp ? new Date(p.hs_timestamp).getTime() : 0,
+        body: (p.hs_note_body || "").substring(0, 800),
+        subject: "",
+        from: "",
+        to: "",
+        title: "",
+        disposition: "",
+        durationMs: 0,
+      });
+    }
+
+    for (const c of calls) {
+      const p = c.properties || {};
+      all.push({
+        type: "CALL",
+        timestamp: p.hs_timestamp ? new Date(p.hs_timestamp).getTime() : 0,
+        body: (p.hs_call_body || "").substring(0, 800),
+        subject: "",
+        from: "",
+        to: "",
+        title: p.hs_call_title || "",
+        disposition: p.hs_call_disposition || "",
+        durationMs: parseInt(p.hs_call_duration) || 0,
+      });
+    }
+
+    for (const e of emails) {
+      const p = e.properties || {};
+      all.push({
+        type: "EMAIL",
+        timestamp: p.hs_timestamp ? new Date(p.hs_timestamp).getTime() : 0,
+        body: (p.hs_email_text || "").substring(0, 800),
+        subject: p.hs_email_subject || "",
+        from: p.hs_email_from_email || "",
+        to: p.hs_email_to_email || "",
+        title: "",
+        disposition: "",
+        durationMs: 0,
+      });
+    }
+
+    for (const m of meetings) {
+      const p = m.properties || {};
+      all.push({
+        type: "MEETING",
+        timestamp: p.hs_timestamp ? new Date(p.hs_timestamp).getTime() : 0,
+        body: (p.hs_meeting_body || "").substring(0, 800),
+        subject: "",
+        from: "",
+        to: "",
+        title: p.hs_meeting_title || "",
+        disposition: "",
+        durationMs: 0,
+      });
+    }
+
+    // Sort descending by timestamp, return last 15
+    return all
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, 15);
   } catch {
     return [];
   }
