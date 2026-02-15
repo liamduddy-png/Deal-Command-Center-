@@ -101,7 +101,7 @@ export default function App() {
     setAiText("");
     var prompt = getPrompt(action.id, selected);
 
-    fetch("https://api.anthropic.com/v1/messages", {
+    fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
