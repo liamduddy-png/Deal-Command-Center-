@@ -193,10 +193,17 @@ const useStore = create((set, get) => ({
     };
 
     try {
-      const res = await fetch("/api/generate", {
+      // Route deep_research to Perplexity-powered endpoint
+      const isDeepResearch = action.id === "deep_research";
+      const endpoint = isDeepResearch ? "/api/deep-research" : "/api/generate";
+      const body = isDeepResearch
+        ? { company: selected.company, context }
+        : { type: action.id, context };
+
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: action.id, context }),
+        body: JSON.stringify(body),
       });
 
       if (!res.ok) {

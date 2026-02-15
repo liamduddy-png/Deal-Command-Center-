@@ -10,6 +10,7 @@ export const PIPELINE_ACTIONS = [
   { id: "customer_story", label: "Story", icon: "\uD83D\uDDE3\uFE0F", desc: "Customer story for calls" },
   { id: "call_track", label: "Call Track", icon: "\uD83C\uDFA4", desc: "Call framework" },
   { id: "research", label: "Research", icon: "\uD83D\uDD0D", desc: "Company research" },
+  { id: "deep_research", label: "Deep Research", icon: "\uD83D\uDD2C", desc: "Web intel: news, projects, jobs" },
   { id: "deal_story", label: "Deal Story", icon: "\uD83D\uDCD6", desc: "Deal narrative" },
   { id: "next_steps", label: "Next Steps", icon: "\u27A1\uFE0F", desc: "Prioritized actions" },
   { id: "slack_update", label: "Slack Update", icon: "\uD83D\uDCAC", desc: "Status update" },
@@ -25,4 +26,5 @@ export const EXPANSION_ACTIONS = [
   { id: "customer_story", label: "Story", icon: "\uD83D\uDDE3\uFE0F", desc: "Customer story for calls" },
   { id: "champion_map", label: "Relationships", icon: "\uD83D\uDDFA\uFE0F", desc: "Champion mapping" },
   { id: "usage_report", label: "Usage", icon: "\uD83D\uDCC8", desc: "Usage analysis" },
+  { id: "deep_research", label: "Deep Research", icon: "\uD83D\uDD2C", desc: "Web intel: news, projects, jobs" },
 ];
