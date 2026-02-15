@@ -39,15 +39,54 @@ Provide:
 4. Competitive intelligence to reference
 5. Next milestone to propose`,
 
-    deck_outline: `Create a presentation deck outline for ${deal.company}.
-Stage: ${deal.stage || "N/A"}. Industry: Construction.
-Structure:
-1. Their pain points (construction-specific)
-2. Trunk Tools solution mapping
-3. ROI and value metrics
-4. Implementation timeline
-5. Social proof / case studies
-6. Pricing and next steps`,
+    spin_deck: `Create a SPIN Selling presentation deck for ${deal.company}.
+Stage: ${deal.stage || "N/A"}. Value: ${fmtAmt}. Contact: ${deal.contact}.
+Industry: Construction technology.
+
+Structure the deck using the SPIN framework:
+
+**Situation** (2-3 slides)
+- Their current state: how they manage field ops, project tracking, safety
+- Team size, project volume, tech stack assumptions
+
+**Problem** (2-3 slides)
+- Pain points: manual processes, rework costs, schedule delays, safety incidents
+- Cost of inaction with construction-specific metrics
+
+**Implication** (2-3 slides)
+- What happens if problems persist: margin erosion, talent loss, competitive disadvantage
+- Quantify the impact for a company their size
+
+**Need-Payoff** (3-4 slides)
+- How Trunk Tools solves each problem
+- ROI projections and payback period
+- Case studies from similar construction companies
+- Implementation timeline and next steps
+
+Make it ready to present. Include suggested talking points for each slide.`,
+
+    meddpicc_review: `Run a MEDDPICC qualification review for ${deal.company}.
+Stage: ${deal.stage || "N/A"}. Value: ${fmtAmt}. Contact: ${deal.contact}.
+Close date: ${deal.closeDate || "N/A"}. Health: ${deal.health}.
+
+Score each element (Red / Yellow / Green) and provide analysis:
+
+**Metrics** - What quantifiable business outcomes are they trying to achieve?
+**Economic Buyer** - Who controls the budget? Have we engaged them?
+**Decision Criteria** - What factors will they use to make a decision?
+**Decision Process** - What is the approval process and timeline?
+**Identify Pain** - What is the compelling event or pain driving this?
+**Champion** - Do we have an internal advocate? How strong?
+**Competition** - Who else are they evaluating? What's our position?
+**Paper Process** - Legal, procurement, security review status?
+
+For each element:
+1. Current status (R/Y/G)
+2. Evidence supporting the rating
+3. Specific actions to improve
+4. Questions to ask in next meeting
+
+End with an overall deal score and recommendation.`,
 
     call_track: `Build a call framework for ${deal.company}.
 Stage: ${deal.stage || "N/A"}. Goal: advance to next milestone.
