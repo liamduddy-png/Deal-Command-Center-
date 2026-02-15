@@ -15,24 +15,27 @@ const useStore = create((set, get) => ({
   aiText: "",
   loading: false,
 
-  // HubSpot state
-  hubspotDeals: null, // null = not loaded, [] = loaded but empty
+  // HubSpot deal context (fetched per-deal)
+  dealContext: null, // { available, found, meddpicc, gong, recentActivity, notes, contextBlock }
+  dealContextLoading: false,
+
+  // HubSpot state (all deals)
+  hubspotDeals: null,
   hubspotLoading: false,
   hubspotError: null,
   useHubspot: false,
 
-  // Computed
-  get isPipeline() {
-    return get().mode === "pipeline";
-  },
-
   // Actions
-  setMode: (mode) => set({ mode, search: "", showAttack: false, selected: null, activeAction: null, aiText: "" }),
+  setMode: (mode) => set({ mode, search: "", showAttack: false, selected: null, activeAction: null, aiText: "", dealContext: null }),
   setSearch: (search) => set({ search }),
   toggleAttack: () => set((s) => ({ showAttack: !s.showAttack })),
 
-  selectDeal: (deal) => set({ selected: deal, activeAction: null, aiText: "", loading: false }),
-  goBack: () => set({ selected: null, activeAction: null, aiText: "", loading: false }),
+  selectDeal: (deal) => {
+    set({ selected: deal, activeAction: null, aiText: "", loading: false, dealContext: null, dealContextLoading: true });
+    // Fetch HubSpot context for this deal
+    get().fetchDealContext(deal.company);
+  },
+  goBack: () => set({ selected: null, activeAction: null, aiText: "", loading: false, dealContext: null }),
 
   getDeals: () => {
     const { mode, hubspotDeals, useHubspot } = get();
@@ -64,13 +67,35 @@ const useStore = create((set, get) => ({
     return get().getFilteredDeals().reduce((sum, d) => sum + (d.amount || d.arr || 0), 0);
   },
 
-  // AI action
+  // Fetch HubSpot context for a single deal
+  fetchDealContext: async (companyName) => {
+    try {
+      const res = await fetch(`/api/hubspot-deal?company=${encodeURIComponent(companyName)}`);
+      if (!res.ok) {
+        set({ dealContextLoading: false });
+        return;
+      }
+      const data = await res.json();
+      set({ dealContext: data, dealContextLoading: false });
+    } catch {
+      set({ dealContextLoading: false });
+    }
+  },
+
+  // AI action — includes HubSpot context in prompt
   runAction: async (action) => {
-    const { selected } = get();
+    const { selected, dealContext } = get();
     if (!selected) return;
 
     set({ activeAction: action.id, loading: true, aiText: "" });
-    const prompt = getPrompt(action.id, selected);
+
+    // Build the prompt with deal data
+    let prompt = getPrompt(action.id, selected);
+
+    // Inject HubSpot context if available
+    if (dealContext?.found && dealContext?.contextBlock) {
+      prompt = `${prompt}\n\n---\n\nHere is real deal intelligence from HubSpot CRM. Use this data to make your response specific and actionable:\n\n${dealContext.contextBlock}`;
+    }
 
     try {
       const res = await fetch("/api/chat", {
@@ -78,7 +103,7 @@ const useStore = create((set, get) => ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
-          max_tokens: 1024,
+          max_tokens: 1500,
           messages: [{ role: "user", content: prompt }],
         }),
       });
@@ -106,7 +131,7 @@ const useStore = create((set, get) => ({
     }
   },
 
-  // HubSpot
+  // HubSpot (all deals)
   fetchHubspotDeals: async () => {
     set({ hubspotLoading: true, hubspotError: null });
     try {
