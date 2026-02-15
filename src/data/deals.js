@@ -89,32 +89,41 @@ export const HEALTH_TEXT_COLORS = {
 
 // Maps milestone property values from HubSpot to colors
 export function getMilestoneColor(value) {
-  if (!value) return "#334155"; // slate-700 — not set
+  if (!value) return "#555"; // weak — not set
 
-  const v = String(value).toLowerCase().trim();
+  const v = String(value).toLowerCase();
 
-  // Green — completed / committed / validated
-  if (["committed", "fit", "closure", "complete", "msa", "validated", "confirmed", "done", "yes", "true"].includes(v)) {
+  // Green — strong / committed / validated
+  if (
+    v.includes("vendor") ||
+    v.includes("fit") ||
+    v.includes("committed") ||
+    v.includes("supportive") ||
+    v.includes("signed")
+  ) {
     return "#22C55E";
   }
 
-  // Red — not validated / blocked / at risk
-  if (["not_validated", "not validated", "blocked", "no", "false", "at_risk", "at risk", "failed"].includes(v)) {
-    return "#EF4444";
+  // Gold — in progress
+  if (
+    v.includes("aware") ||
+    v.includes("involvement") ||
+    v.includes("nda") ||
+    v.includes("msa") ||
+    v.includes("eval")
+  ) {
+    return "#D6A84F";
   }
 
-  // Amber — in progress / partial
-  if (["eval", "aware", "nda", "started", "in_progress", "in progress", "partial", "pending"].includes(v)) {
-    return "#F59E0B";
+  // Grey — weak / not started
+  if (
+    v.includes("not") ||
+    v.includes("awareness")
+  ) {
+    return "#777";
   }
 
-  // Slate — not started / not given
-  if (["not_given", "not given", "not_started", "not started", "none", "n/a"].includes(v)) {
-    return "#64748B";
-  }
-
-  // Default — has a value but unrecognized, treat as in-progress
-  return "#F59E0B";
+  return "#AAA";
 }
 
 export function getEngagementStatus(engagements) {
