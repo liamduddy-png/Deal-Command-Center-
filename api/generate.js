@@ -107,6 +107,59 @@ CONTEXT ANALYSIS:
 Use ALL data automatically. Never ask the user to provide context.
 Always account for dates and timeline in your outputs — reference when things happened, not just what happened.
 
+DEAL ENGAGEMENT STATUS — auto-derive from activity data:
+
+1. In Good Standing
+- Recent two-way communication
+- Next meeting scheduled or clear agreed next step
+- Buyer is engaging (questions, docs, internal alignment)
+- Action: keep momentum, confirm timeline, multithread
+
+2. At Risk
+- Engagement slowing
+- Next step discussed but not locked
+- Delays blamed on "busy," "travel," or internal review
+- Action: label the risk, re-anchor value, tighten next step
+- Language: "Sounds like priorities shifted—what's changed on your end?"
+
+3. Stalled
+- No forward progress in 14–30 days
+- Meetings keep slipping
+- Decision process unclear or re-scoped
+- Action: force clarity
+- Language: "Usually when things stall, it's timing, priority, or ownership—where are we stuck?"
+
+4. Meeting Missed
+- Prospect no-shows or late cancels
+- No proactive reschedule from their side
+- Action: pattern interrupt + control
+- Language: "Should we pause this for now, or is there still a reason to revisit?"
+
+5. Ghosted
+- 3+ unanswered attempts across channels
+- No response after a clear ask
+- Action: breakup + value reminder
+- Language: "I'll assume this isn't a priority unless I hear otherwise."
+
+6. Re-Engaging
+- Previously stalled or ghosted
+- Prospect responds after gap
+- New trigger (project start, leadership change, issue surfaced)
+- Action: re-qualify from scratch, don't assume momentum
+
+7. Closed – Lost (No Decision)
+- Deal died due to inaction or deprioritization
+- Action: document why, set re-engagement task tied to trigger
+
+When a deal is stalled or at risk, tag the reason:
+- No internal owner
+- No economic buyer
+- Competing priority
+- Timing / project not active
+- Tool overlap (e.g., "Procore already handles it")
+
+Include the engagement status in all deal-facing outputs (forecasts, follow-ups, next steps, health checks).
+
 STORYTELLING MODE — auto-activate when the action is customer_story:
 When in storytelling mode, treat "case study" and "use case study" as "customer story".
 Never call them case studies in output — always "customer story".
@@ -123,14 +176,24 @@ Pick the question based on the audience role inferred from contacts:
 const ACTION_INSTRUCTIONS = {
   follow_up: `You are drafting a follow-up email.
 First, use your HubSpot tools to find this deal and pull all context.
-Adjust tone based on engagement recency, milestone stage, MEDDPICC gaps, and risk signals.
-Do not mention internal terminology. Focus on workflow pain.`,
+Auto-derive the deal engagement status (In Good Standing, At Risk, Stalled, Meeting Missed, Ghosted, Re-Engaging).
+Match your tone and approach to the engagement status:
+- In Good Standing: confirm next step, keep momentum
+- At Risk: label the risk, re-anchor value, tighten next step
+- Stalled: force clarity on timing, priority, or ownership
+- Meeting Missed: pattern interrupt, offer pause or reschedule
+- Ghosted: breakup email with value reminder
+- Re-Engaging: re-qualify, don't assume prior momentum
+Do not mention internal terminology. Focus on workflow friction.`,
 
   ghost: `You are writing a re-engagement sequence for a deal that has gone dark.
 First, use your HubSpot tools to find this deal and check last activity date.
+Auto-derive the engagement status — confirm this is Ghosted (3+ unanswered attempts, no response after clear ask).
 Create 3 short emails spaced 3–5 days apart.
-Each takes a different angle: value reminder, social proof, urgency.
-Do not be pushy. Focus on the pain they originally expressed.`,
+Email 1: value reminder tied to their original friction
+Email 2: social proof — short customer story relevant to their role
+Email 3: breakup — "I'll assume this isn't a priority unless I hear otherwise."
+Do not be pushy. Focus on the operational friction they originally expressed.`,
 
   gut_forecast: `You are writing a forecast block.
 First, use your HubSpot tools to pull deal data, contacts, and engagements.
