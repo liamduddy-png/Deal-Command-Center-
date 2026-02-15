@@ -21,7 +21,7 @@ MILESTONE DERIVATION RULES — auto-derive from deal context:
 
 CHANGE:
 - Identify Pain vague or missing → "Not validated"
-- Actively evaluating tools / committed to solving → "Committed to change"
+- Actively evaluating tools / committed to solving → "Committed"
 
 TECHNICAL:
 - Demo scheduled or in progress → "Eval"
@@ -33,7 +33,7 @@ PRICING:
 - Pricing sent but not aligned / under review → "Aware"
 - Reviewed, negotiating, aligned → "Closure"
 
-COMMERCIAL:
+PAPERWORK:
 - NDA signed → "NDA"
 - MSA in progress or sent → "MSA"
 
@@ -42,16 +42,16 @@ SECURITY:
 - Questionnaire or security review underway → "Started"
 - Security approved / cleared → "Complete"
 
-EXECUTIVE (MEDDPICCR):
+POWER:
 - Exec copied on email → "Awareness"
 - Exec attending calls → "Involvement"
 - Exec actively advocating → "Supportive"
 
-When outputting milestone status:
+MILESTONE OUTPUT FORMAT (always use this exact inline format):
 Company – $Amount
-Milestone: Change / Technical / Pricing / Commercial / Security
-Next Step: [action with owner]
-Risk: [gaps]
+Milestone: Change (Value), Technical (Value), Pricing (Value), Power (Value), Paperwork (Value)
+Next Step: [specific action with date]
+Risk: [specific gaps]
 
 CONTEXT ANALYSIS:
 1. MEDDPICC — analyze, flag gaps, rate strength
@@ -59,8 +59,10 @@ CONTEXT ANALYSIS:
 3. Contacts — infer buying influence from titles, flag missing exec/DM access
 4. Historical — days in pipeline, stale signals
 5. Emails — detect who replied last, pricing/timeline keywords, sentiment
+6. Gong calls — use call dates as timeline anchors. When engagements include calls with "[Gong" in title or "gong.io" in body, use those dates to establish what was discussed when. Factor call recency and content into all outputs.
 
 Use ALL data automatically. Never ask the user to provide context.
+Always account for dates and timeline in your outputs — reference when things happened, not just what happened.
 `;
 
 const ACTION_INSTRUCTIONS = {
@@ -75,10 +77,15 @@ Create 3 short emails spaced 3–5 days apart.
 Each takes a different angle: value reminder, social proof, urgency.
 Do not be pushy. Focus on the pain they originally expressed.`,
 
-  gut_forecast: `You are writing a GUT forecast block.
-First, use your HubSpot tools to pull deal data.
-Format: Company | Amount | Close Date | Confidence % | Key Risk | Next Step
-Include a 1-line narrative.`,
+  gut_forecast: `You are writing a forecast block.
+First, use your HubSpot tools to pull deal data, contacts, and engagements.
+Auto-derive milestones from deal signals using the milestone derivation rules.
+Output format:
+Company – $Amount
+Milestone: Change (Value), Technical (Value), Pricing (Value), Power (Value), Paperwork (Value)
+Next Step: [specific action with date]
+Risk: [specific gaps]
+Then add a 1-line confidence narrative with close date.`,
 
   meeting_prep: `You are preparing a pre-call brief.
 First, use your HubSpot tools to find this deal, contacts, and recent activity.
@@ -93,12 +100,20 @@ Use construction-specific language.`,
   meddpicc_review: `You are reviewing the MEDDPICC scorecard for this deal.
 First, use your HubSpot tools to pull all MEDDPICC fields and recent activity.
 For each element: Rate Strong / Developing / Gap, provide evidence, recommend action.
-Then auto-derive milestones and output the milestone block.`,
+Then auto-derive milestones using the derivation rules and output the inline milestone block:
+Company – $Amount
+Milestone: Change (Value), Technical (Value), Pricing (Value), Power (Value), Paperwork (Value)
+Next Step: [action with date]
+Risk: [gaps]`,
 
   milestone_review: `You are auto-deriving milestone status.
 First, use your HubSpot tools to pull deal properties, contacts, and engagements.
 Use the milestone derivation rules to map signals to milestone values.
-Output: Company – $Amount, Milestone block, Next Step, Risk.
+Output in this exact format:
+Company – $Amount
+Milestone: Change (Value), Technical (Value), Pricing (Value), Power (Value), Paperwork (Value)
+Next Step: [specific action with date]
+Risk: [specific gaps]
 Be precise. Flag unknowns.`,
 
   call_track: `You are building a call framework.
