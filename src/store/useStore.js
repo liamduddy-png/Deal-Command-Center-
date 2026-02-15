@@ -1,6 +1,15 @@
 import { create } from "zustand";
 import { PIPELINE_DEALS, EXPANSION_DEALS } from "../data/deals";
 import { PIPELINE_ACTIONS, EXPANSION_ACTIONS } from "../data/actions";
+import {
+  connectGmail as gmailConnect,
+  disconnectGmail as gmailDisconnect,
+  isGmailConnected,
+  fetchEmailsForContacts,
+  fetchEmailBody,
+  getStoredClientId,
+  setStoredClientId,
+} from "../lib/gmail";
 
 // Extract deal ID from HubSpot URL
 // e.g. https://app.hubspot.com/contacts/12345678/deal/98765432
@@ -31,16 +40,24 @@ const useStore = create((set, get) => ({
   hubspotError: null,
   useHubspot: false,
 
+  // Gmail state
+  gmailConnected: isGmailConnected(),
+  gmailClientId: getStoredClientId(),
+  gmailEmails: [],
+  gmailLoading: false,
+  gmailError: null,
+  gmailExpandedId: null, // ID of email with expanded body
+
   // Actions
   setMode: (mode) => set({ mode, search: "", showAttack: false, selected: null, activeAction: null, aiText: "", dealContext: null }),
   setSearch: (search) => set({ search }),
   toggleAttack: () => set((s) => ({ showAttack: !s.showAttack })),
 
   selectDeal: (deal) => {
-    set({ selected: deal, activeAction: null, aiText: "", loading: false, dealContext: null, dealContextLoading: true });
+    set({ selected: deal, activeAction: null, aiText: "", loading: false, dealContext: null, dealContextLoading: true, gmailEmails: [], gmailExpandedId: null });
     get().fetchDealContext(deal.company);
   },
-  goBack: () => set({ selected: null, activeAction: null, aiText: "", loading: false, dealContext: null }),
+  goBack: () => set({ selected: null, activeAction: null, aiText: "", loading: false, dealContext: null, gmailEmails: [], gmailExpandedId: null }),
 
   // Load deal from pasted HubSpot URL
   loadDealFromUrl: async (url) => {
@@ -93,6 +110,10 @@ const useStore = create((set, get) => ({
         dealContext: data,
         dealContextLoading: false,
       });
+      // Auto-fetch Gmail emails
+      if (isGmailConnected()) {
+        get().fetchGmailEmails(deal, data);
+      }
     } catch (err) {
       set({ dealContextLoading: false, aiText: "Error: " + err.message });
     }
@@ -138,15 +159,20 @@ const useStore = create((set, get) => ({
       }
       const data = await res.json();
       set({ dealContext: data, dealContextLoading: false });
+      // Auto-fetch Gmail emails once we have contact info
+      const { selected } = get();
+      if (selected && isGmailConnected()) {
+        get().fetchGmailEmails(selected, data);
+      }
     } catch {
       set({ dealContextLoading: false });
     }
   },
 
   // AI action — sends { type, context } to /api/generate
-  // Claude automatically receives ALL deal context from HubSpot
+  // Claude automatically receives ALL deal context from HubSpot + Gmail
   runAction: async (action) => {
-    const { selected, dealContext, mode } = get();
+    const { selected, dealContext, mode, gmailEmails } = get();
     if (!selected) return;
 
     set({ activeAction: action.id, loading: true, aiText: "" });
@@ -190,6 +216,18 @@ const useStore = create((set, get) => ({
       dealRisk: hubspot?.deal?.risk || null,
       compellingEvent: hubspot?.deal?.compellingEvent || null,
       dealDescription: hubspot?.deal?.description || null,
+      // Gmail email history with deal contacts
+      gmailEmails: gmailEmails.length > 0
+        ? gmailEmails.map((e) => ({
+            date: new Date(e.timestamp).toISOString().split("T")[0],
+            from: e.from,
+            to: e.to,
+            subject: e.subject,
+            snippet: e.snippet,
+            body: e.body || null,
+            direction: e.isSent ? "sent" : "received",
+          }))
+        : null,
     };
 
     try {
@@ -222,6 +260,87 @@ const useStore = create((set, get) => ({
       }
     } catch (err) {
       set({ aiText: "Error: " + err.message, loading: false });
+    }
+  },
+
+  // Gmail
+  setGmailClientId: (clientId) => {
+    setStoredClientId(clientId);
+    set({ gmailClientId: clientId });
+  },
+
+  connectGmail: async () => {
+    const { gmailClientId } = get();
+    if (!gmailClientId) {
+      set({ gmailError: "Enter your Google OAuth Client ID first" });
+      return;
+    }
+    try {
+      const token = await gmailConnect(gmailClientId);
+      if (token) {
+        set({ gmailConnected: true, gmailError: null });
+        // Auto-fetch emails if a deal is selected
+        const { selected, dealContext } = get();
+        if (selected) {
+          get().fetchGmailEmails(selected, dealContext);
+        }
+      }
+    } catch (err) {
+      set({ gmailError: err.message });
+    }
+  },
+
+  disconnectGmail: () => {
+    gmailDisconnect();
+    set({ gmailConnected: false, gmailEmails: [], gmailError: null, gmailExpandedId: null });
+  },
+
+  fetchGmailEmails: async (deal, dealContext) => {
+    if (!isGmailConnected()) return;
+
+    // Collect contact emails from deal context
+    const contacts = dealContext?.context?.contacts || [];
+    const contactEmails = contacts
+      .map((c) => c.email)
+      .filter(Boolean);
+
+    if (contactEmails.length === 0) {
+      set({ gmailEmails: [], gmailLoading: false });
+      return;
+    }
+
+    set({ gmailLoading: true, gmailError: null, gmailEmails: [], gmailExpandedId: null });
+
+    try {
+      const emails = await fetchEmailsForContacts(contactEmails);
+      set({ gmailEmails: emails, gmailLoading: false });
+    } catch (err) {
+      if (err.message.includes("expired") || err.message.includes("401")) {
+        set({ gmailConnected: false, gmailEmails: [], gmailLoading: false, gmailError: "Gmail session expired. Reconnect." });
+      } else {
+        set({ gmailEmails: [], gmailLoading: false, gmailError: err.message });
+      }
+    }
+  },
+
+  toggleGmailEmail: async (messageId) => {
+    const { gmailExpandedId } = get();
+    if (gmailExpandedId === messageId) {
+      set({ gmailExpandedId: null });
+      return;
+    }
+    // Fetch body and expand
+    set({ gmailExpandedId: messageId });
+    try {
+      const body = await fetchEmailBody(messageId);
+      // Update the email in the list with its body
+      set((s) => ({
+        gmailEmails: s.gmailEmails.map((e) =>
+          e.id === messageId ? { ...e, body } : e
+        ),
+      }));
+    } catch {
+      // Silently fail — snippet is still shown
     }
   },
 

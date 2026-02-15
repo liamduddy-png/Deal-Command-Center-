@@ -134,6 +134,14 @@ CONTEXT ANALYSIS:
 4. Historical — days in pipeline, stale signals
 5. Emails — detect who replied last, pricing/timeline keywords, sentiment
 6. Gong calls — use call dates as timeline anchors. When engagements include calls with "[Gong" in title or "gong.io" in body, use those dates to establish what was discussed when. Factor call recency and content into all outputs.
+7. Gmail emails — when gmailEmails are provided in context, these are ACTUAL emails the AE has sent to and received from deal contacts (pulled from their Gmail). Use these to:
+   - Understand the real conversation history and tone
+   - Reference specific things discussed in prior emails
+   - Match the AE's natural writing style and voice
+   - Identify what was promised, asked, or left unresolved
+   - Detect the last person who sent an email (AE or contact)
+   - Thread follow-ups naturally from the most recent exchange
+   Gmail emails are the highest-fidelity signal — prioritize them over HubSpot engagement summaries when both are available.
 
 Use ALL data automatically. Never ask the user to provide context.
 Always account for dates and timeline in your outputs — reference when things happened, not just what happened.
@@ -215,11 +223,22 @@ Match your tone and approach to the engagement status:
 - Meeting Missed: pattern interrupt, offer pause or reschedule
 - Ghosted: breakup email with value reminder
 - Re-Engaging: re-qualify, don't assume prior momentum
+
+GMAIL CONTEXT: If gmailEmails are provided, these are real emails between the AE and this deal's contacts.
+- Thread your follow-up naturally from the most recent email exchange
+- Reference specific topics, promises, or questions from prior emails
+- Match the AE's actual writing style and tone from their sent emails
+- If the last email was from a contact, respond to what they said
+- If the last email was from the AE with no reply, acknowledge the gap
 Do not mention internal terminology. Focus on workflow friction.`,
 
   ghost: `You are writing a re-engagement sequence for a deal that has gone dark.
 First, use your HubSpot tools to find this deal and check last activity date.
 Auto-derive the engagement status — confirm this is Ghosted (3+ unanswered attempts, no response after clear ask).
+If gmailEmails are provided, use the actual email history to:
+- Reference the last thing discussed before they went dark
+- Tie Email 1 back to the specific friction they originally raised
+- Use the AE's natural voice from their prior sent emails
 Create 3 short emails spaced 3–5 days apart.
 Email 1: value reminder tied to their original friction
 Email 2: social proof — short customer story relevant to their role
@@ -240,6 +259,7 @@ Apply commit criteria: deal is NOT Commit unless change committed + technical se
   post_meeting: `You are drafting a post-meeting follow-up email after an intro or discovery call.
 First, use your HubSpot tools to find this deal and pull all context, contacts, and engagements.
 Use the most recent engagement data to reconstruct what was discussed.
+If gmailEmails are provided, use the actual email thread to understand the conversation arc — what was shared before the meeting, who initiated, what was promised.
 
 STRUCTURE (use these exact sections):
 
@@ -599,12 +619,16 @@ export default async function handler(req, res) {
   const actionInstructions = ACTION_INSTRUCTIONS[type] || `Action: ${type}`;
 
   // Build prompt — Claude will use tools to fetch HubSpot data
+  const gmailSection = context.gmailEmails
+    ? `\n\nGMAIL EMAIL HISTORY (real emails between AE and contacts — highest priority context):\n${JSON.stringify(context.gmailEmails, null, 2)}`
+    : "";
+
   const prompt = `${actionInstructions}
 
 Deal Context (from app):
-${JSON.stringify(context, null, 2)}
+${JSON.stringify(context, null, 2)}${gmailSection}
 
-Use your HubSpot tools to search for "${context.company}" and pull the latest deal data, contacts, and engagements before generating your response.`;
+Use your HubSpot tools to search for "${context.company}" and pull the latest deal data, contacts, and engagements before generating your response.${context.gmailEmails ? "\nGmail email history is already provided above — use it to inform your output. These are actual emails, not summaries." : ""}`;
 
   // Determine which tools to provide
   const tools = process.env.HUBSPOT_PRIVATE_APP_TOKEN ? HUBSPOT_TOOLS : [];

@@ -239,6 +239,9 @@ export default function DealLayout() {
         {/* HubSpot Intel Panel */}
         {hasHubspot && <HubSpotPanel context={hubspot} />}
 
+        {/* Gmail Emails Panel */}
+        <GmailPanel />
+
         {/* Smart Actions */}
         <div className="mb-5">
           <div className="label mb-3">Smart Actions</div>
@@ -361,6 +364,113 @@ function HubSpotPanel({ context }) {
             </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function GmailPanel() {
+  const gmailConnected = useStore((s) => s.gmailConnected);
+  const gmailEmails = useStore((s) => s.gmailEmails);
+  const gmailLoading = useStore((s) => s.gmailLoading);
+  const gmailError = useStore((s) => s.gmailError);
+  const gmailExpandedId = useStore((s) => s.gmailExpandedId);
+  const toggleGmailEmail = useStore((s) => s.toggleGmailEmail);
+
+  if (!gmailConnected) return null;
+
+  if (gmailLoading) {
+    return (
+      <div className="card p-5 mb-5" style={{ borderColor: "rgba(66,133,244,0.2)" }}>
+        <div className="flex items-center gap-2">
+          <span className="text-sm">&#x2709;</span>
+          <span className="label" style={{ color: "#4285F4" }}>Gmail</span>
+          <span className="text-[10px] text-slate-600 ml-auto animate-pulse">loading emails...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (gmailError) {
+    return (
+      <div className="card p-5 mb-5" style={{ borderColor: "rgba(239,68,68,0.2)" }}>
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-sm">&#x2709;</span>
+          <span className="label" style={{ color: "#EF4444" }}>Gmail Error</span>
+        </div>
+        <p className="text-xs text-red-400">{gmailError}</p>
+      </div>
+    );
+  }
+
+  if (gmailEmails.length === 0) return null;
+
+  return (
+    <div className="card p-5 mb-5" style={{ borderColor: "rgba(66,133,244,0.2)" }}>
+      <div className="flex items-center gap-2 mb-4">
+        <span className="text-sm">&#x2709;</span>
+        <span className="label" style={{ color: "#4285F4" }}>Gmail — Email History with Contacts</span>
+        <span className="text-[10px] text-slate-600 ml-auto">{gmailEmails.length} emails</span>
+      </div>
+
+      <div className="space-y-1">
+        {gmailEmails.map((email) => {
+          const isExpanded = gmailExpandedId === email.id;
+          const dateStr = new Date(email.timestamp).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          });
+          // Parse sender name from "Name <email>" format
+          const fromName = email.from.replace(/<[^>]+>/, "").trim() || email.from;
+
+          return (
+            <div key={email.id}>
+              <button
+                onClick={() => toggleGmailEmail(email.id)}
+                className="w-full text-left px-3 py-2.5 rounded-lg transition-all hover:bg-slate-800/50 flex items-start gap-3"
+                style={{ background: isExpanded ? "rgba(66,133,244,0.05)" : "transparent" }}
+              >
+                {/* Direction indicator */}
+                <span
+                  className="text-[9px] font-bold mt-1 shrink-0 w-10 text-center rounded py-0.5"
+                  style={{
+                    background: email.isSent ? "rgba(66,133,244,0.1)" : "rgba(52,168,83,0.1)",
+                    color: email.isSent ? "#4285F4" : "#34A853",
+                  }}
+                >
+                  {email.isSent ? "SENT" : "RECV"}
+                </span>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-300 font-medium truncate">
+                      {email.subject}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-[10px] text-slate-500 truncate">
+                      {email.isSent ? `To: ${email.to}` : `From: ${fromName}`}
+                    </span>
+                  </div>
+                </div>
+
+                <span className="text-[10px] text-slate-600 shrink-0 mt-0.5">
+                  {dateStr}
+                </span>
+              </button>
+
+              {/* Expanded email body */}
+              {isExpanded && (
+                <div className="mx-3 mb-2 px-4 py-3 rounded-lg text-xs text-slate-300 leading-relaxed whitespace-pre-wrap max-h-64 overflow-y-auto"
+                  style={{ background: "#0E0E0E", borderLeft: "2px solid #4285F4" }}
+                >
+                  {email.body || email.snippet || "No content available"}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
