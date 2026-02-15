@@ -10,6 +10,50 @@ Blend motion + MEDDPICC risk.
 Be direct, specific, and actionable.
 Reference real data when provided.
 Format output for easy copy/paste into emails, Slack, and decks.
+
+MILESTONE DERIVATION RULES — use these to auto-derive milestone status from deal context:
+
+CHANGE:
+- Identify Pain vague or missing → "Not validated"
+- Actively evaluating tools / committed to solving → "Committed to change"
+
+TECHNICAL:
+- Demo scheduled or in progress → "Eval"
+- Demo done, technical validated, confirmed fit → "Fit"
+- Verbal preference, validation complete → "Vendor of Choice"
+
+PRICING:
+- No pricing shared yet → "Not given"
+- Pricing sent but not aligned / under review → "Aware"
+- Reviewed, negotiating, aligned → "Closure"
+
+COMMERCIAL:
+- NDA signed → "NDA"
+- MSA in progress or sent → "MSA"
+
+SECURITY:
+- No security review started → "Not started"
+- Questionnaire or security review underway → "Started"
+- Security approved / cleared → "Complete"
+
+EXECUTIVE (MEDDPICCR):
+- Exec copied on email → "Awareness"
+- Exec attending calls → "Involvement"
+- Exec actively advocating → "Supportive"
+
+When outputting milestone status, use this format:
+Company – $Amount
+
+Milestone:
+Change – [derived value]
+Technical – [derived value]
+Pricing – [derived value]
+Commercial – [derived value]
+Security – [derived value]
+
+Next Step: [specific action with owner]
+
+Risk: [key risks identified from gaps]
 `;
 
 const ACTION_INSTRUCTIONS = {
@@ -45,7 +89,35 @@ For each element (Metrics, Economic Buyer, Decision Criteria, Decision Process,
 Identify Pain, Champion, Competition, Paper Process):
 - Rate: Strong / Developing / Gap
 - Provide evidence from deal context
-- Recommend specific next action to strengthen`,
+- Recommend specific next action to strengthen
+
+Then auto-derive milestones using the milestone derivation rules.
+Output the milestone block at the end:
+Company – $Amount
+Milestone: Change / Technical / Pricing / Commercial / Security
+Next Step and Risk.`,
+
+  milestone_review: `You are auto-deriving milestone status from deal context.
+Use the milestone derivation rules in the system instructions.
+Analyze ALL available signals: MEDDPICC fields, engagement history, Gong summaries,
+contact roles, and deal stage.
+
+Output format:
+
+Company – $Amount
+
+Milestone:
+Change – [value based on Identify Pain signals]
+Technical – [value based on demo/eval/fit signals]
+Pricing – [value based on pricing signals]
+Commercial – [value based on NDA/MSA signals]
+Security – [value based on security review signals]
+
+Next Step: [most critical action with owner and deadline]
+
+Risk: [top risks derived from milestone gaps and MEDDPICC weaknesses]
+
+Be precise. If a signal is missing, flag it as a gap. Do not guess — say what is unknown.`,
 
   call_track: `You are building a call framework.
 Include: opening hook, discovery questions, value props to hit,

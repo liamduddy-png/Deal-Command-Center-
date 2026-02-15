@@ -5,6 +5,7 @@ export const PIPELINE_ACTIONS = [
   { id: "meeting_prep", label: "Meeting Prep", icon: "\uD83C\uDFAF", desc: "Pre-call brief" },
   { id: "spin_deck", label: "SPIN Deck", icon: "\uD83C\uDFAF", desc: "SPIN selling deck outline" },
   { id: "meddpicc_review", label: "MEDDPICC Review", icon: "\uD83D\uDCCB", desc: "MEDDPICC scorecard" },
+  { id: "milestone_review", label: "Milestones", icon: "\uD83D\uDCCD", desc: "Auto-derive milestone status" },
   { id: "call_track", label: "Call Track", icon: "\uD83C\uDFA4", desc: "Call framework" },
   { id: "research", label: "Research", icon: "\uD83D\uDD0D", desc: "Company research" },
   { id: "deal_story", label: "Deal Story", icon: "\uD83D\uDCD6", desc: "Deal narrative" },
