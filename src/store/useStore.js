@@ -18,7 +18,31 @@ function extractDealId(url) {
   return match ? match[1] : null;
 }
 
+// Auth persistence
+const AUTH_KEY = "dcc_user";
+function getStoredUser() {
+  try {
+    const raw = localStorage.getItem(AUTH_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
 const useStore = create((set, get) => ({
+  // Auth state
+  user: getStoredUser(),
+  authError: null,
+
+  login: (user) => {
+    localStorage.setItem(AUTH_KEY, JSON.stringify(user));
+    set({ user, authError: null });
+  },
+
+  logout: () => {
+    localStorage.removeItem(AUTH_KEY);
+    localStorage.removeItem("gmail_access_token");
+    set({ user: null, gmailConnected: false, gmailEmails: [] });
+  },
+
   // View state
   mode: "pipeline",
   search: "",

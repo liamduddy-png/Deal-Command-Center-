@@ -10,6 +10,10 @@ export default function Header() {
   const goBack = useStore((s) => s.goBack);
   const isPipeline = mode === "pipeline";
 
+  // Auth
+  const user = useStore((s) => s.user);
+  const logout = useStore((s) => s.logout);
+
   // Gmail
   const gmailConnected = useStore((s) => s.gmailConnected);
   const gmailClientId = useStore((s) => s.gmailClientId);
@@ -183,6 +187,27 @@ export default function Header() {
             </div>
           )}
         </div>
+
+        {/* User avatar & logout */}
+        {user && (
+          <div className="flex items-center gap-2">
+            {user.picture && (
+              <img
+                src={user.picture}
+                alt=""
+                className="w-7 h-7 rounded-full"
+                referrerPolicy="no-referrer"
+              />
+            )}
+            <button
+              onClick={logout}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+              style={{ background: "#161616", border: "1px solid #262626", color: "#666" }}
+            >
+              Sign Out
+            </button>
+          </div>
+        )}
       </div>
     </header>
   );
