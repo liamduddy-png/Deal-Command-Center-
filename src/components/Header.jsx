@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import useStore from "../store/useStore";
+import { getStoredClientId } from "../lib/gmail";
 
 export default function Header() {
   const mode = useStore((s) => s.mode);
@@ -27,7 +28,7 @@ export default function Header() {
   const toggleHubspot = useStore((s) => s.toggleHubspot);
   const [hubspotAvailable, setHubspotAvailable] = useState(null);
 
-  // Check if HubSpot is configured on mount — auto-connect if available
+  // Check if HubSpot and Gmail are configured on mount — auto-connect if available
   useEffect(() => {
     fetch("/api/health")
       .then((r) => r.json())
@@ -36,6 +37,11 @@ export default function Header() {
         setHubspotAvailable(available);
         if (available && !useStore.getState().useHubspot) {
           useStore.getState().fetchHubspotDeals();
+        }
+        // Auto-set Gmail Client ID from server config if not already set
+        if (data.hasGmailClientId && data.gmailClientId && !getStoredClientId()) {
+          setGmailClientId(data.gmailClientId);
+          setClientIdInput(data.gmailClientId);
         }
       })
       .catch(() => setHubspotAvailable(false));
@@ -313,7 +319,10 @@ export default function Header() {
                     Connect with Google
                   </button>
                   <p className="text-[10px] text-slate-600 mt-2">
-                    Read-only access. Create a Client ID at console.cloud.google.com
+                    Read-only access.{" "}
+                    {clientIdInput
+                      ? "Click Connect to authorize."
+                      : "Set GOOGLE_OAUTH_CLIENT_ID env var, or paste a Client ID above."}
                   </p>
                 </div>
               )}
