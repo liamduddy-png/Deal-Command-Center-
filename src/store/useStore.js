@@ -28,8 +28,8 @@ function getStoredUser() {
 }
 
 const useStore = create((set, get) => ({
-  // Auth state
-  user: getStoredUser(),
+  // Auth state — auto-authenticated (no login gate)
+  user: getStoredUser() || { name: "User", email: "" },
   authError: null,
 
   login: (user) => {
