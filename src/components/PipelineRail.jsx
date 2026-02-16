@@ -9,6 +9,7 @@ export default function PipelineRail() {
   const selected = useStore((s) => s.selected);
   const selectDeal = useStore((s) => s.selectDeal);
   const total = useStore((s) => s.getTotal());
+  const useHubspot = useStore((s) => s.useHubspot);
   const isPipeline = mode === "pipeline";
 
   // Group deals by stage
@@ -33,6 +34,11 @@ export default function PipelineRail() {
           <span className="text-xs text-slate-600 font-mono">
             {filteredDeals.length} &middot; ${total.toLocaleString()}
           </span>
+          {!useHubspot && (
+            <span className="text-[9px] text-slate-700 bg-slate-900 rounded px-1.5 py-0.5 ml-1">
+              sample
+            </span>
+          )}
         </div>
         {/* Search */}
         <div className="relative">

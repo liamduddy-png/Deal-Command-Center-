@@ -387,6 +387,9 @@ const useStore = create((set, get) => ({
         throw new Error(errText.substring(0, 200));
       }
       const data = await res.json();
+      if (data.available === false) {
+        throw new Error(data.reason || "HubSpot token not configured");
+      }
       set({ hubspotDeals: data.deals || [], hubspotLoading: false, useHubspot: true });
     } catch (err) {
       set({ hubspotError: err.message, hubspotLoading: false });

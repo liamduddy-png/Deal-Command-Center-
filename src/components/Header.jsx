@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import useStore from "../store/useStore";
 
 export default function Header() {
@@ -13,6 +13,28 @@ export default function Header() {
   // Auth
   const user = useStore((s) => s.user);
   const logout = useStore((s) => s.logout);
+
+  // HubSpot
+  const useHubspot = useStore((s) => s.useHubspot);
+  const hubspotLoading = useStore((s) => s.hubspotLoading);
+  const hubspotError = useStore((s) => s.hubspotError);
+  const hubspotDeals = useStore((s) => s.hubspotDeals);
+  const toggleHubspot = useStore((s) => s.toggleHubspot);
+  const [hubspotAvailable, setHubspotAvailable] = useState(null);
+
+  // Check if HubSpot is configured on mount — auto-connect if available
+  useEffect(() => {
+    fetch("/api/health")
+      .then((r) => r.json())
+      .then((data) => {
+        const available = data.hasHubspotToken === true;
+        setHubspotAvailable(available);
+        if (available && !useStore.getState().useHubspot) {
+          useStore.getState().fetchHubspotDeals();
+        }
+      })
+      .catch(() => setHubspotAvailable(false));
+  }, []);
 
   // Gmail
   const gmailConnected = useStore((s) => s.gmailConnected);
@@ -97,6 +119,56 @@ export default function Header() {
             }}
           >
             Attack Plan
+          </button>
+        )}
+
+        {/* HubSpot toggle */}
+        {hubspotAvailable !== false && (
+          <button
+            onClick={toggleHubspot}
+            disabled={hubspotLoading}
+            className="px-4 py-1.5 rounded-lg text-xs font-medium transition-all relative"
+            style={{
+              background: useHubspot
+                ? "rgba(255,122,47,0.1)"
+                : "#161616",
+              border: `1px solid ${
+                useHubspot
+                  ? "rgba(255,122,47,0.3)"
+                  : hubspotError
+                  ? "rgba(239,68,68,0.3)"
+                  : "#262626"
+              }`,
+              color: useHubspot
+                ? "#FF7A2F"
+                : hubspotError
+                ? "#EF4444"
+                : "#666",
+              opacity: hubspotLoading ? 0.7 : 1,
+            }}
+            title={
+              hubspotError
+                ? `Error: ${hubspotError}`
+                : useHubspot
+                ? `${hubspotDeals?.length || 0} live deals loaded`
+                : "Switch to live HubSpot deals"
+            }
+          >
+            {hubspotLoading ? (
+              <span className="flex items-center gap-1.5">
+                <span className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
+                Loading...
+              </span>
+            ) : useHubspot ? (
+              <span className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
+                HubSpot Live ({hubspotDeals?.length || 0})
+              </span>
+            ) : hubspotError ? (
+              "HubSpot Error"
+            ) : (
+              "Connect HubSpot"
+            )}
           </button>
         )}
 
