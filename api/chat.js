@@ -50,6 +50,9 @@ ${JSON.stringify(context, null, 2)}
     const output = await generateWithClaude(prompt);
     return res.status(200).json({ output });
   } catch (err) {
-    return res.status(500).json({ error: err.message || "Unknown error" });
+    console.error("[chat] CHAT_FAILED:", err.message);
+    return res.status(500).json({
+      error: { code: "CHAT_FAILED", message: err.message || "Unknown error" },
+    });
   }
 }

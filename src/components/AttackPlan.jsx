@@ -1,12 +1,12 @@
-import { PIPELINE_DEALS } from "../data/deals";
 import useStore from "../store/useStore";
 
 export default function AttackPlan() {
   const selectDeal = useStore((s) => s.selectDeal);
+  const allDeals = useStore((s) => s.getDeals());
 
-  const slipping = PIPELINE_DEALS.filter((d) => d.health === "cold");
-  const hot = PIPELINE_DEALS.filter((d) => d.health === "hot");
-  const closingSoon = PIPELINE_DEALS.filter((d) => {
+  const slipping = allDeals.filter((d) => d.health === "cold");
+  const hot = allDeals.filter((d) => d.health === "hot");
+  const closingSoon = allDeals.filter((d) => {
     const days = Math.ceil((new Date(d.closeDate) - new Date()) / 86400000);
     return days <= 14 && days > 0;
   });
@@ -26,7 +26,7 @@ export default function AttackPlan() {
       color: "text-green-400",
       bg: "bg-green-500/5",
       border: "border-green-500/20",
-      sub: (d) => "$" + d.amount.toLocaleString(),
+      sub: (d) => "$" + (d.amount || 0).toLocaleString(),
     },
     {
       title: "Closing Soon",

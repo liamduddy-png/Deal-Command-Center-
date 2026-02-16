@@ -12,14 +12,11 @@ import {
 } from "../lib/gmail";
 
 // Extract deal ID from HubSpot URL
-// e.g. https://app.hubspot.com/contacts/12345678/deal/98765432
-//      https://app.hubspot.com/contacts/12345678/record/0-3/98765432
 function extractDealId(url) {
   const dealMatch = url.match(/deal\/(\d+)/);
   if (dealMatch) return dealMatch[1];
   const recordMatch = url.match(/record\/0-3\/(\d+)/);
   if (recordMatch) return recordMatch[1];
-  // Fall back to last numeric segment in the URL path
   const fallback = url.match(/\/(\d{8,})/);
   return fallback ? fallback[1] : null;
 }
@@ -32,6 +29,36 @@ function getStoredUser() {
     return raw ? JSON.parse(raw) : null;
   } catch { return null; }
 }
+
+// AI output history persistence
+const AI_HISTORY_KEY = "dcc_ai_history";
+function getStoredAiHistory() {
+  try {
+    const raw = localStorage.getItem(AI_HISTORY_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+}
+function saveAiHistory(history) {
+  try {
+    // Keep only last 50 entries to prevent storage bloat
+    const keys = Object.keys(history);
+    if (keys.length > 50) {
+      const sorted = keys.sort((a, b) => {
+        const aLast = history[a][history[a].length - 1]?.timestamp || 0;
+        const bLast = history[b][history[b].length - 1]?.timestamp || 0;
+        return bLast - aLast;
+      });
+      const trimmed = {};
+      sorted.slice(0, 50).forEach((k) => { trimmed[k] = history[k]; });
+      localStorage.setItem(AI_HISTORY_KEY, JSON.stringify(trimmed));
+      return;
+    }
+    localStorage.setItem(AI_HISTORY_KEY, JSON.stringify(history));
+  } catch { /* storage full — ignore */ }
+}
+
+// Request deduplication — prevent duplicate API calls
+let activeRequests = {};
 
 const useStore = create((set, get) => ({
   // Auth state — auto-authenticated (no login gate)
@@ -54,11 +81,19 @@ const useStore = create((set, get) => ({
   search: "",
   selected: null,
   showAttack: false,
+  showForecasting: false,
 
   // AI state
   activeAction: null,
   aiText: "",
   loading: false,
+
+  // AI output history — keyed by deal company name
+  aiHistory: getStoredAiHistory(),
+  showHistory: false,
+
+  // Demo / Live mode
+  dataMode: "demo", // "demo" = static data, "live" = HubSpot
 
   // HubSpot deal context (fetched per-deal)
   dealContext: null,
@@ -76,18 +111,43 @@ const useStore = create((set, get) => ({
   gmailEmails: [],
   gmailLoading: false,
   gmailError: null,
-  gmailExpandedId: null, // ID of email with expanded body
+  gmailExpandedId: null,
 
   // Actions
-  setMode: (mode) => set({ mode, search: "", showAttack: false, selected: null, activeAction: null, aiText: "", dealContext: null }),
+  setMode: (mode) => set({ mode, search: "", showAttack: false, showForecasting: false, selected: null, activeAction: null, aiText: "", dealContext: null }),
   setSearch: (search) => set({ search }),
-  toggleAttack: () => set((s) => ({ showAttack: !s.showAttack })),
+  toggleAttack: () => set((s) => ({ showAttack: !s.showAttack, showForecasting: false })),
+  toggleForecasting: () => set((s) => ({ showForecasting: !s.showForecasting, showAttack: false })),
+  toggleHistory: () => set((s) => ({ showHistory: !s.showHistory })),
+
+  // Data mode toggle
+  setDataMode: (dataMode) => {
+    if (dataMode === "live") {
+      set({ dataMode, useHubspot: true });
+      get().fetchHubspotDeals();
+    } else {
+      set({ dataMode, useHubspot: false });
+    }
+  },
 
   selectDeal: (deal) => {
-    set({ selected: deal, activeAction: null, aiText: "", loading: false, dealContext: null, dealContextLoading: true, gmailEmails: [], gmailExpandedId: null });
+    set({ selected: deal, activeAction: null, aiText: "", loading: false, dealContext: null, dealContextLoading: true, gmailEmails: [], gmailExpandedId: null, showHistory: false });
     get().fetchDealContext(deal.company);
   },
-  goBack: () => set({ selected: null, activeAction: null, aiText: "", loading: false, dealContext: null, gmailEmails: [], gmailExpandedId: null }),
+  goBack: () => set({ selected: null, activeAction: null, aiText: "", loading: false, dealContext: null, gmailEmails: [], gmailExpandedId: null, showHistory: false }),
+
+  // Load a saved AI output from history
+  loadFromHistory: (entry) => {
+    set({ aiText: entry.output, activeAction: entry.actionId });
+  },
+
+  // Clear history for a deal
+  clearDealHistory: (company) => {
+    const history = { ...get().aiHistory };
+    delete history[company];
+    saveAiHistory(history);
+    set({ aiHistory: history });
+  },
 
   // Load deal from pasted HubSpot URL
   loadDealFromUrl: async (url) => {
@@ -119,7 +179,6 @@ const useStore = create((set, get) => ({
       }
 
       const ctx = data.context;
-      // Create a synthetic deal object from HubSpot data
       const deal = {
         id: parseInt(data.dealId),
         company: ctx.deal.name,
@@ -140,7 +199,6 @@ const useStore = create((set, get) => ({
         dealContext: data,
         dealContextLoading: false,
       });
-      // Auto-fetch Gmail emails
       if (isGmailConnected()) {
         get().fetchGmailEmails(deal, data);
       }
@@ -179,6 +237,35 @@ const useStore = create((set, get) => ({
     return get().getFilteredDeals().reduce((sum, d) => sum + (d.amount || d.arr || 0), 0);
   },
 
+  // Export pipeline to CSV
+  exportToCSV: () => {
+    const deals = get().getFilteredDeals();
+    const mode = get().mode;
+    const isPipeline = mode === "pipeline";
+
+    const headers = isPipeline
+      ? ["Company", "Contact", "Amount", "Stage", "Close Date", "Health", "Last Activity"]
+      : ["Company", "Contact", "ARR", "Renewal Date", "Health", "Usage", "Risk", "Projects"];
+
+    const rows = deals.map((d) =>
+      isPipeline
+        ? [d.company, d.contact, d.amount || 0, d.stage, d.closeDate, d.health, d.lastActivity]
+        : [d.company, d.contact, d.arr || 0, d.renewalDate, d.health, d.usage, d.risk, d.projects]
+    );
+
+    const csv = [headers, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell || "").replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${mode}-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
+
   // Fetch HubSpot context for a single deal (by company name)
   fetchDealContext: async (companyName) => {
     try {
@@ -189,7 +276,6 @@ const useStore = create((set, get) => ({
       }
       const data = await res.json();
       set({ dealContext: data, dealContextLoading: false });
-      // Auto-fetch Gmail emails once we have contact info
       const { selected } = get();
       if (selected && isGmailConnected()) {
         get().fetchGmailEmails(selected, data);
@@ -199,15 +285,18 @@ const useStore = create((set, get) => ({
     }
   },
 
-  // AI action — sends { type, context } to /api/generate
-  // Claude automatically receives ALL deal context from HubSpot + Gmail
+  // AI action with deduplication and rate limiting
   runAction: async (action) => {
-    const { selected, dealContext, mode, gmailEmails } = get();
+    const { selected, dealContext, mode, gmailEmails, loading } = get();
     if (!selected) return;
+
+    // Deduplication — prevent duplicate concurrent requests
+    const requestKey = `${selected.company}:${action.id}`;
+    if (loading || activeRequests[requestKey]) return;
+    activeRequests[requestKey] = true;
 
     set({ activeAction: action.id, loading: true, aiText: "" });
 
-    // Build context: merge local deal data with HubSpot intel
     const hubspot = dealContext?.context || null;
 
     const context = {
@@ -220,33 +309,23 @@ const useStore = create((set, get) => ({
       lastActivity: selected.lastActivity || null,
       milestones: selected.ms || null,
       mode,
-      // Expansion fields
       arr: selected.arr || null,
       renewalDate: selected.renewalDate || null,
       usage: selected.usage || null,
       risk: selected.risk || null,
       projects: selected.projects || null,
-      // HubSpot intel (auto-injected, no pasting)
-      // MEDDPICC fields — for analysis, not just display
       meddpicc: hubspot?.meddpicc || null,
-      // Gong call summaries
       gong: hubspot?.gong || null,
-      // Contact intelligence: names, titles, influence, active status
       contacts: hubspot?.contacts || [],
       contactSummary: hubspot?.contactSummary || null,
-      // Activity intelligence: last 10 engagements with sender/recipient
       recentActivity: hubspot?.engagements || [],
       activitySummary: hubspot?.activitySummary || null,
-      // Historical signals: days in pipeline, stale detection, gaps
       history: hubspot?.history || null,
-      // Milestone properties from HubSpot custom fields
       hubspotMilestones: hubspot?.milestones || null,
-      // Deal-level fields
       nextStep: hubspot?.deal?.nextStep || null,
       dealRisk: hubspot?.deal?.risk || null,
       compellingEvent: hubspot?.deal?.compellingEvent || null,
       dealDescription: hubspot?.deal?.description || null,
-      // Gmail email history with deal contacts
       gmailEmails: gmailEmails.length > 0
         ? gmailEmails.map((e) => ({
             date: new Date(e.timestamp).toISOString().split("T")[0],
@@ -261,7 +340,6 @@ const useStore = create((set, get) => ({
     };
 
     try {
-      // Route deep_research to Perplexity-powered endpoint
       const isDeepResearch = action.id === "deep_research";
       const endpoint = isDeepResearch ? "/api/deep-research" : "/api/generate";
       const body = isDeepResearch
@@ -282,7 +360,21 @@ const useStore = create((set, get) => ({
       const data = await res.json();
 
       if (data?.output) {
-        set({ aiText: data.output, loading: false });
+        // Save to AI history
+        const aiHistory = { ...get().aiHistory };
+        const key = selected.company;
+        if (!aiHistory[key]) aiHistory[key] = [];
+        aiHistory[key].unshift({
+          actionId: action.id,
+          actionLabel: action.label,
+          output: data.output,
+          timestamp: Date.now(),
+        });
+        // Keep last 10 per deal
+        aiHistory[key] = aiHistory[key].slice(0, 10);
+        saveAiHistory(aiHistory);
+
+        set({ aiText: data.output, loading: false, aiHistory });
       } else if (data?.error) {
         set({ aiText: "API Error: " + (data.error.message || JSON.stringify(data.error)), loading: false });
       } else {
@@ -290,9 +382,11 @@ const useStore = create((set, get) => ({
       }
     } catch (err) {
       const msg = err.message === "Failed to fetch"
-        ? "API request failed — check Vercel function logs for details (Settings → Functions → Logs)"
+        ? "API request failed — check Vercel function logs for details (Settings > Functions > Logs)"
         : err.message;
       set({ aiText: "Error: " + msg, loading: false });
+    } finally {
+      delete activeRequests[requestKey];
     }
   },
 
@@ -312,7 +406,6 @@ const useStore = create((set, get) => ({
       const token = await gmailConnect(gmailClientId);
       if (token) {
         set({ gmailConnected: true, gmailError: null });
-        // Auto-fetch emails if a deal is selected
         const { selected, dealContext } = get();
         if (selected) {
           get().fetchGmailEmails(selected, dealContext);
@@ -331,7 +424,6 @@ const useStore = create((set, get) => ({
   fetchGmailEmails: async (deal, dealContext) => {
     if (!isGmailConnected()) return;
 
-    // Collect contact emails from deal context
     const contacts = dealContext?.context?.contacts || [];
     const contactEmails = contacts
       .map((c) => c.email)
@@ -362,11 +454,9 @@ const useStore = create((set, get) => ({
       set({ gmailExpandedId: null });
       return;
     }
-    // Fetch body and expand
     set({ gmailExpandedId: messageId });
     try {
       const body = await fetchEmailBody(messageId);
-      // Update the email in the list with its body
       set((s) => ({
         gmailEmails: s.gmailEmails.map((e) =>
           e.id === messageId ? { ...e, body } : e

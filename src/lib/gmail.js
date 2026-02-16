@@ -76,8 +76,8 @@ export function disconnectGmail() {
   tokenClient = null;
 }
 
-// Gmail API fetch helper
-async function gmailFetch(path, params = {}) {
+// Gmail API fetch helper with retry
+async function gmailFetch(path, params = {}, retries = 1) {
   const token = getToken();
   if (!token) throw new Error("Gmail not connected");
 
@@ -93,6 +93,11 @@ async function gmailFetch(path, params = {}) {
   if (res.status === 401) {
     localStorage.removeItem(TOKEN_KEY);
     throw new Error("Gmail token expired. Please reconnect.");
+  }
+  if (res.status === 429 && retries > 0) {
+    // Rate limited — wait and retry
+    await new Promise((r) => setTimeout(r, 2000));
+    return gmailFetch(path, params, retries - 1);
   }
   if (!res.ok) {
     throw new Error(`Gmail API error: ${res.status}`);

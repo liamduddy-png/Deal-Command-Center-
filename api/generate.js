@@ -684,6 +684,11 @@ Use your HubSpot tools to search for "${context.company}" and pull the latest de
     });
     return res.status(200).json({ output });
   } catch (err) {
-    return res.status(500).json({ error: err.message || "Unknown error" });
+    const status = err.status || 500;
+    const code = err.code || "GENERATION_FAILED";
+    console.error(`[generate] ${code}:`, err.message);
+    return res.status(status).json({
+      error: { code, message: err.message || "Unknown error" },
+    });
   }
 }
