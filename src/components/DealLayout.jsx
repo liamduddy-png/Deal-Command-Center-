@@ -64,7 +64,7 @@ export default function DealLayout() {
               <div className="flex gap-2">
                 <input
                   type="text"
-                  placeholder="https://app.hubspot.com/.../deal/123456"
+                  placeholder="Paste HubSpot deal URL"
                   value={urlInput}
                   onChange={(e) => {
                     setUrlInput(e.target.value);

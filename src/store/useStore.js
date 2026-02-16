@@ -13,9 +13,15 @@ import {
 
 // Extract deal ID from HubSpot URL
 // e.g. https://app.hubspot.com/contacts/12345678/deal/98765432
+//      https://app.hubspot.com/contacts/12345678/record/0-3/98765432
 function extractDealId(url) {
-  const match = url.match(/deal\/(\d+)/);
-  return match ? match[1] : null;
+  const dealMatch = url.match(/deal\/(\d+)/);
+  if (dealMatch) return dealMatch[1];
+  const recordMatch = url.match(/record\/0-3\/(\d+)/);
+  if (recordMatch) return recordMatch[1];
+  // Fall back to last numeric segment in the URL path
+  const fallback = url.match(/\/(\d{8,})/);
+  return fallback ? fallback[1] : null;
 }
 
 // Auth persistence
@@ -87,7 +93,7 @@ const useStore = create((set, get) => ({
   loadDealFromUrl: async (url) => {
     const dealId = extractDealId(url);
     if (!dealId) {
-      set({ aiText: "Could not extract deal ID from URL. Expected format: https://app.hubspot.com/.../deal/123456" });
+      set({ aiText: "Could not extract deal ID from URL. Paste a HubSpot deal URL (e.g. .../deal/123456 or .../record/0-3/123456)" });
       return;
     }
 
