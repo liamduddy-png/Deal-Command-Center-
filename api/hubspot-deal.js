@@ -2,6 +2,8 @@
 // Returns activity timeline, MEDDPICC fields, Gong call summaries
 // NEVER writes to HubSpot
 
+export const config = { maxDuration: 30 };
+
 import { hubspotFetch } from "../lib/hubspot.js";
 
 const DEAL_PROPERTIES = [

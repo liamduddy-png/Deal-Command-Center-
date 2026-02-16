@@ -2,6 +2,8 @@
 // Returns deal properties, associated contacts, last 5 engagements
 // NEVER writes to HubSpot
 
+export const config = { maxDuration: 30 };
+
 import { hubspotFetch } from "../lib/hubspot.js";
 import { buildDealContext } from "../lib/context-builder.js";
 

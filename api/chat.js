@@ -1,5 +1,7 @@
 import { generateWithClaude } from "../lib/claude.js";
 
+export const config = { maxDuration: 60 };
+
 const SYSTEM_INSTRUCTIONS = `
 You are a sales execution engine for Trunk Tools, a construction technology platform.
 Do not use internal sales jargon.

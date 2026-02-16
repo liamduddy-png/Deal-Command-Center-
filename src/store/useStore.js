@@ -289,7 +289,10 @@ const useStore = create((set, get) => ({
         set({ aiText: "Unexpected response format", loading: false });
       }
     } catch (err) {
-      set({ aiText: "Error: " + err.message, loading: false });
+      const msg = err.message === "Failed to fetch"
+        ? "API request failed — check Vercel function logs for details (Settings → Functions → Logs)"
+        : err.message;
+      set({ aiText: "Error: " + msg, loading: false });
     }
   },
 

@@ -2,6 +2,8 @@
 // Fetches deals, MEDDPICC fields, activity, and Gong call summaries
 // NEVER writes or pushes data back to HubSpot
 
+export const config = { maxDuration: 30 };
+
 import { hubspotFetch } from "../lib/hubspot.js";
 
 const DEAL_PROPERTIES = [
