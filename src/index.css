@@ -1,0 +1,99 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #0E0E0E;
+    color: #E2E2E2;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::-webkit-scrollbar {
+    width: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #262626;
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #333;
+  }
+}
+
+@layer components {
+  .card {
+    background: #161616;
+    border: 1px solid #262626;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+  }
+  .card-hover {
+    background: #161616;
+    border: 1px solid #262626;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+  }
+  .card-hover:hover {
+    border-color: #333;
+    background: #1a1a1a;
+  }
+  .label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #666;
+    font-weight: 600;
+  }
+  .btn {
+    @apply px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer select-none;
+  }
+  .btn-primary {
+    @apply btn text-white;
+    background: #D6A84F;
+  }
+  .btn-primary:hover {
+    background: #c49a45;
+  }
+  .health-dot {
+    @apply inline-block w-2 h-2 rounded-full shrink-0;
+  }
+
+  /* Markdown prose inside AI responses */
+  .ai-prose h1, .ai-prose h2, .ai-prose h3 {
+    @apply font-semibold mt-4 mb-2;
+    color: #E2E2E2;
+  }
+  .ai-prose h1 { @apply text-lg; }
+  .ai-prose h2 { @apply text-base; }
+  .ai-prose h3 { @apply text-sm; }
+  .ai-prose p { @apply mb-3 leading-relaxed; }
+  .ai-prose ul, .ai-prose ol { @apply mb-3 pl-5 space-y-1; }
+  .ai-prose ul { @apply list-disc; }
+  .ai-prose ol { @apply list-decimal; }
+  .ai-prose li { @apply leading-relaxed; }
+  .ai-prose strong { color: #E2E2E2; @apply font-semibold; }
+  .ai-prose em { color: #999; @apply italic; }
+  .ai-prose code {
+    background: #1a1a1a;
+    color: #D6A84F;
+    @apply px-1.5 py-0.5 rounded text-xs font-mono;
+  }
+  .ai-prose pre {
+    background: #1a1a1a;
+    @apply rounded-lg p-4 mb-3 overflow-x-auto;
+  }
+  .ai-prose pre code { background: transparent; @apply p-0; }
+  .ai-prose blockquote {
+    border-left: 2px solid #D6A84F;
+    @apply pl-4 italic mb-3;
+    color: #888;
+  }
+  .ai-prose hr { border-color: #262626; @apply my-4; }
+  .ai-prose a { color: #D6A84F; }
+  .ai-prose a:hover { @apply underline; }
+}

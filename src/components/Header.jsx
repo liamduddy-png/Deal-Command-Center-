@@ -1,0 +1,214 @@
+import { useState } from "react";
+import useStore from "../store/useStore";
+
+export default function Header() {
+  const mode = useStore((s) => s.mode);
+  const setMode = useStore((s) => s.setMode);
+  const showAttack = useStore((s) => s.showAttack);
+  const toggleAttack = useStore((s) => s.toggleAttack);
+  const selected = useStore((s) => s.selected);
+  const goBack = useStore((s) => s.goBack);
+  const isPipeline = mode === "pipeline";
+
+  // Auth
+  const user = useStore((s) => s.user);
+  const logout = useStore((s) => s.logout);
+
+  // Gmail
+  const gmailConnected = useStore((s) => s.gmailConnected);
+  const gmailClientId = useStore((s) => s.gmailClientId);
+  const setGmailClientId = useStore((s) => s.setGmailClientId);
+  const connectGmail = useStore((s) => s.connectGmail);
+  const disconnectGmail = useStore((s) => s.disconnectGmail);
+  const gmailError = useStore((s) => s.gmailError);
+  const [showGmailSetup, setShowGmailSetup] = useState(false);
+  const [clientIdInput, setClientIdInput] = useState(gmailClientId);
+
+  return (
+    <header className="flex items-center justify-between px-6 py-3 border-b" style={{ borderColor: "#262626", background: "#0E0E0E" }}>
+      <div className="flex items-center gap-4">
+        {/* Back button when deal selected */}
+        {selected && (
+          <button
+            onClick={goBack}
+            className="flex items-center gap-1 text-sm transition-colors group"
+            style={{ color: "#666" }}
+          >
+            <svg
+              className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            Back
+          </button>
+        )}
+        <div>
+          <h1 className="text-lg font-semibold" style={{ color: "#E2E2E2" }}>
+            Trunk Tools
+          </h1>
+          <p className="text-xs" style={{ color: "#555" }}>
+            Deal Command Center &middot; Liam Duddy
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3">
+        {/* Mode toggle */}
+        <div className="flex rounded-lg p-0.5" style={{ background: "#161616", border: "1px solid #262626" }}>
+          <button
+            onClick={() => setMode("pipeline")}
+            className="px-4 py-1.5 rounded-md text-xs font-medium transition-all duration-200"
+            style={{
+              background: isPipeline ? "#262626" : "transparent",
+              color: isPipeline ? "#E2E2E2" : "#666",
+            }}
+          >
+            Pipeline
+          </button>
+          <button
+            onClick={() => setMode("expansion")}
+            className="px-4 py-1.5 rounded-md text-xs font-medium transition-all duration-200"
+            style={{
+              background: !isPipeline ? "#262626" : "transparent",
+              color: !isPipeline ? "#E2E2E2" : "#666",
+            }}
+          >
+            Expansion
+          </button>
+        </div>
+
+        {/* Attack Plan toggle */}
+        {isPipeline && !selected && (
+          <button
+            onClick={toggleAttack}
+            className="px-4 py-1.5 rounded-lg text-xs font-medium transition-all"
+            style={{
+              background: showAttack ? "rgba(214,168,79,0.1)" : "#161616",
+              border: `1px solid ${showAttack ? "rgba(214,168,79,0.3)" : "#262626"}`,
+              color: showAttack ? "#D6A84F" : "#666",
+            }}
+          >
+            Attack Plan
+          </button>
+        )}
+
+        {/* Gmail connect */}
+        <div className="relative">
+          {gmailConnected ? (
+            <button
+              onClick={() => setShowGmailSetup(!showGmailSetup)}
+              className="px-4 py-1.5 rounded-lg text-xs font-medium transition-all"
+              style={{
+                background: "rgba(52,168,83,0.1)",
+                border: "1px solid rgba(52,168,83,0.3)",
+                color: "#34A853",
+              }}
+            >
+              Gmail Connected
+            </button>
+          ) : (
+            <button
+              onClick={() => setShowGmailSetup(!showGmailSetup)}
+              className="px-4 py-1.5 rounded-lg text-xs font-medium transition-all"
+              style={{
+                background: "#161616",
+                border: "1px solid #262626",
+                color: "#666",
+              }}
+            >
+              Connect Gmail
+            </button>
+          )}
+
+          {/* Gmail setup dropdown */}
+          {showGmailSetup && (
+            <div
+              className="absolute right-0 top-full mt-2 w-80 rounded-xl p-4 z-50"
+              style={{ background: "#1a1a1a", border: "1px solid #333" }}
+            >
+              {gmailConnected ? (
+                <div>
+                  <p className="text-xs text-green-400 mb-3">Gmail is connected. Emails from deal contacts will appear automatically.</p>
+                  <button
+                    onClick={() => {
+                      disconnectGmail();
+                      setShowGmailSetup(false);
+                    }}
+                    className="w-full px-3 py-2 rounded-lg text-xs font-medium transition-all"
+                    style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#EF4444" }}
+                  >
+                    Disconnect Gmail
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-xs text-slate-400 mb-3">
+                    Connect Gmail to pull email history with deal contacts. Requires a Google OAuth Client ID.
+                  </p>
+                  <input
+                    type="text"
+                    placeholder="Google OAuth Client ID"
+                    value={clientIdInput}
+                    onChange={(e) => setClientIdInput(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg text-xs mb-2 outline-none"
+                    style={{ background: "#0E0E0E", border: "1px solid #333", color: "#E2E2E2" }}
+                  />
+                  {gmailError && (
+                    <p className="text-xs text-red-400 mb-2">{gmailError}</p>
+                  )}
+                  <button
+                    onClick={async () => {
+                      if (clientIdInput.trim()) {
+                        setGmailClientId(clientIdInput.trim());
+                        await connectGmail();
+                        if (useStore.getState().gmailConnected) {
+                          setShowGmailSetup(false);
+                        }
+                      }
+                    }}
+                    className="w-full px-3 py-2 rounded-lg text-xs font-medium transition-all"
+                    style={{ background: "rgba(66,133,244,0.15)", border: "1px solid rgba(66,133,244,0.3)", color: "#4285F4" }}
+                  >
+                    Connect with Google
+                  </button>
+                  <p className="text-[10px] text-slate-600 mt-2">
+                    Read-only access. Create a Client ID at console.cloud.google.com
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* User avatar & logout */}
+        {user && (
+          <div className="flex items-center gap-2">
+            {user.picture && (
+              <img
+                src={user.picture}
+                alt=""
+                className="w-7 h-7 rounded-full"
+                referrerPolicy="no-referrer"
+              />
+            )}
+            <button
+              onClick={logout}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+              style={{ background: "#161616", border: "1px solid #262626", color: "#666" }}
+            >
+              Sign Out
+            </button>
+          </div>
+        )}
+      </div>
+    </header>
+  );
+}
