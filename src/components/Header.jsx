@@ -6,8 +6,13 @@ export default function Header() {
   const setMode = useStore((s) => s.setMode);
   const showAttack = useStore((s) => s.showAttack);
   const toggleAttack = useStore((s) => s.toggleAttack);
+  const showForecasting = useStore((s) => s.showForecasting);
+  const toggleForecasting = useStore((s) => s.toggleForecasting);
   const selected = useStore((s) => s.selected);
   const goBack = useStore((s) => s.goBack);
+  const exportToCSV = useStore((s) => s.exportToCSV);
+  const dataMode = useStore((s) => s.dataMode);
+  const setDataMode = useStore((s) => s.setDataMode);
   const isPipeline = mode === "pipeline";
 
   // Auth
@@ -47,8 +52,8 @@ export default function Header() {
   const [clientIdInput, setClientIdInput] = useState(gmailClientId);
 
   return (
-    <header className="flex items-center justify-between px-6 py-3 border-b" style={{ borderColor: "#262626", background: "#0E0E0E" }}>
-      <div className="flex items-center gap-4">
+    <header className="flex items-center justify-between px-3 sm:px-6 py-3 border-b gap-2" style={{ borderColor: "#262626", background: "#0E0E0E" }}>
+      <div className="flex items-center gap-2 sm:gap-4 shrink-0">
         {/* Back button when deal selected */}
         {selected && (
           <button
@@ -82,12 +87,12 @@ export default function Header() {
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
         {/* Mode toggle */}
         <div className="flex rounded-lg p-0.5" style={{ background: "#161616", border: "1px solid #262626" }}>
           <button
             onClick={() => setMode("pipeline")}
-            className="px-4 py-1.5 rounded-md text-xs font-medium transition-all duration-200"
+            className="px-3 sm:px-4 py-1.5 rounded-md text-xs font-medium transition-all duration-200"
             style={{
               background: isPipeline ? "#262626" : "transparent",
               color: isPipeline ? "#E2E2E2" : "#666",
@@ -97,7 +102,7 @@ export default function Header() {
           </button>
           <button
             onClick={() => setMode("expansion")}
-            className="px-4 py-1.5 rounded-md text-xs font-medium transition-all duration-200"
+            className="px-3 sm:px-4 py-1.5 rounded-md text-xs font-medium transition-all duration-200"
             style={{
               background: !isPipeline ? "#262626" : "transparent",
               color: !isPipeline ? "#E2E2E2" : "#666",
@@ -111,7 +116,7 @@ export default function Header() {
         {isPipeline && !selected && (
           <button
             onClick={toggleAttack}
-            className="px-4 py-1.5 rounded-lg text-xs font-medium transition-all"
+            className="px-3 sm:px-4 py-1.5 rounded-lg text-xs font-medium transition-all"
             style={{
               background: showAttack ? "rgba(214,168,79,0.1)" : "#161616",
               border: `1px solid ${showAttack ? "rgba(214,168,79,0.3)" : "#262626"}`,
@@ -120,6 +125,62 @@ export default function Header() {
           >
             Attack Plan
           </button>
+        )}
+
+        {/* Forecasting toggle */}
+        {!selected && (
+          <button
+            onClick={toggleForecasting}
+            className="px-3 sm:px-4 py-1.5 rounded-lg text-xs font-medium transition-all"
+            style={{
+              background: showForecasting ? "rgba(96,165,250,0.1)" : "#161616",
+              border: `1px solid ${showForecasting ? "rgba(96,165,250,0.3)" : "#262626"}`,
+              color: showForecasting ? "#60A5FA" : "#666",
+            }}
+          >
+            Forecast
+          </button>
+        )}
+
+        {/* CSV Export */}
+        {!selected && (
+          <button
+            onClick={exportToCSV}
+            className="px-3 sm:px-4 py-1.5 rounded-lg text-xs font-medium transition-all"
+            style={{
+              background: "#161616",
+              border: "1px solid #262626",
+              color: "#666",
+            }}
+          >
+            Export CSV
+          </button>
+        )}
+
+        {/* Data mode toggle (Demo / Live) */}
+        {!selected && (
+          <div className="flex rounded-lg p-0.5" style={{ background: "#161616", border: "1px solid #262626" }}>
+            <button
+              onClick={() => setDataMode("demo")}
+              className="px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200"
+              style={{
+                background: dataMode === "demo" ? "#262626" : "transparent",
+                color: dataMode === "demo" ? "#E2E2E2" : "#666",
+              }}
+            >
+              Demo
+            </button>
+            <button
+              onClick={() => setDataMode("live")}
+              className="px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200"
+              style={{
+                background: dataMode === "live" ? "rgba(255,122,47,0.2)" : "transparent",
+                color: dataMode === "live" ? "#FF7A2F" : "#666",
+              }}
+            >
+              Live
+            </button>
+          </div>
         )}
 
         {/* HubSpot toggle */}

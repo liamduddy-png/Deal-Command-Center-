@@ -23,8 +23,9 @@ export default function PipelineRail() {
     if (filteredDeals.length > 0) groups["Active Customers"] = filteredDeals;
   }
 
+  // On mobile, hide rail when a deal is selected
   return (
-    <div className="w-80 shrink-0 flex flex-col h-full border-r border-slate-800 bg-slate-950">
+    <div className={`w-full sm:w-80 shrink-0 flex flex-col h-full border-r border-slate-800 bg-slate-950 ${selected ? "hidden sm:flex" : "flex"}`}>
       {/* Rail header */}
       <div className="p-4 border-b border-slate-800">
         <div className="flex items-center justify-between mb-3">

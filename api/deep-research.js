@@ -34,6 +34,9 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ output });
   } catch (err) {
-    return res.status(500).json({ error: err.message || "Deep research failed" });
+    console.error("[deep-research] RESEARCH_FAILED:", err.message);
+    return res.status(500).json({
+      error: { code: "RESEARCH_FAILED", message: err.message || "Deep research failed" },
+    });
   }
 }

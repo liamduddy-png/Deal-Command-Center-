@@ -256,6 +256,11 @@ export default async function handler(req, res) {
       context,
     });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    const status = err.status || 500;
+    const code = err.code || "DEAL_FETCH_FAILED";
+    console.error(`[deal] ${code}:`, err.message);
+    return res.status(status).json({
+      error: { code, message: err.message },
+    });
   }
 }
