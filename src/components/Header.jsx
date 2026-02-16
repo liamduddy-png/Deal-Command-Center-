@@ -22,11 +22,17 @@ export default function Header() {
   const toggleHubspot = useStore((s) => s.toggleHubspot);
   const [hubspotAvailable, setHubspotAvailable] = useState(null);
 
-  // Check if HubSpot is configured on mount
+  // Check if HubSpot is configured on mount — auto-connect if available
   useEffect(() => {
     fetch("/api/health")
       .then((r) => r.json())
-      .then((data) => setHubspotAvailable(data.hasHubspotToken === true))
+      .then((data) => {
+        const available = data.hasHubspotToken === true;
+        setHubspotAvailable(available);
+        if (available && !useStore.getState().useHubspot) {
+          useStore.getState().fetchHubspotDeals();
+        }
+      })
       .catch(() => setHubspotAvailable(false));
   }, []);
 
