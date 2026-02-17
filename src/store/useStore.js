@@ -60,6 +60,19 @@ function saveAiHistory(history) {
 // Request deduplication — prevent duplicate API calls
 let activeRequests = {};
 
+// Fetch with retry for transient network errors
+async function fetchWithRetry(url, options = {}, retries = 2) {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const res = await fetch(url, options);
+      return res;
+    } catch (err) {
+      if (i === retries) throw err;
+      await new Promise((r) => setTimeout(r, 500 * (i + 1)));
+    }
+  }
+}
+
 const useStore = create((set, get) => ({
   // Auth state — auto-authenticated (no login gate)
   user: getStoredUser() || { name: "User", email: "" },
@@ -166,7 +179,7 @@ const useStore = create((set, get) => ({
     });
 
     try {
-      const res = await fetch(`/api/deal?id=${dealId}`);
+      const res = await fetchWithRetry(`/api/deal?id=${dealId}`);
       if (!res.ok) {
         set({ dealContextLoading: false, aiText: "Failed to fetch deal from HubSpot" });
         return;
@@ -269,7 +282,7 @@ const useStore = create((set, get) => ({
   // Fetch HubSpot context for a single deal (by company name)
   fetchDealContext: async (companyName) => {
     try {
-      const res = await fetch(`/api/deal?company=${encodeURIComponent(companyName)}`);
+      const res = await fetchWithRetry(`/api/deal?company=${encodeURIComponent(companyName)}`);
       if (!res.ok) {
         set({ dealContextLoading: false });
         return;
@@ -346,7 +359,7 @@ const useStore = create((set, get) => ({
         ? { company: selected.company, context }
         : { type: action.id, context };
 
-      const res = await fetch(endpoint, {
+      const res = await fetchWithRetry(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -382,7 +395,7 @@ const useStore = create((set, get) => ({
       }
     } catch (err) {
       const msg = err.message === "Failed to fetch"
-        ? "API request failed — check Vercel function logs for details (Settings > Functions > Logs)"
+        ? "Could not reach the API server. The deployment may be restarting — wait a moment and try again."
         : err.message;
       set({ aiText: "Error: " + msg, loading: false });
     } finally {
@@ -471,7 +484,7 @@ const useStore = create((set, get) => ({
   fetchHubspotDeals: async () => {
     set({ hubspotLoading: true, hubspotError: null });
     try {
-      const res = await fetch("/api/hubspot");
+      const res = await fetchWithRetry("/api/hubspot");
       if (!res.ok) {
         const errText = await res.text();
         throw new Error(errText.substring(0, 200));
