@@ -28,23 +28,38 @@ export default function Header() {
   const toggleHubspot = useStore((s) => s.toggleHubspot);
   const [hubspotAvailable, setHubspotAvailable] = useState(null);
 
+  const [apiStatus, setApiStatus] = useState(null); // null = checking, true = ok, false = down
+
   // Check if HubSpot and Gmail are configured on mount — auto-connect if available
   useEffect(() => {
-    fetch("/api/health")
-      .then((r) => r.json())
-      .then((data) => {
-        const available = data.hasHubspotToken === true;
-        setHubspotAvailable(available);
-        if (available && !useStore.getState().useHubspot) {
-          useStore.getState().fetchHubspotDeals();
-        }
-        // Auto-set Gmail Client ID from server config if not already set
-        if (data.hasGmailClientId && data.gmailClientId && !getStoredClientId()) {
-          setGmailClientId(data.gmailClientId);
-          setClientIdInput(data.gmailClientId);
-        }
-      })
-      .catch(() => setHubspotAvailable(false));
+    let retries = 0;
+    const checkHealth = () => {
+      fetch("/api/health")
+        .then((r) => r.json())
+        .then((data) => {
+          setApiStatus(true);
+          const available = data.hasHubspotToken === true;
+          setHubspotAvailable(available);
+          if (available && !useStore.getState().useHubspot) {
+            useStore.getState().fetchHubspotDeals();
+          }
+          // Auto-set Gmail Client ID from server config if not already set
+          if (data.hasGmailClientId && data.gmailClientId && !getStoredClientId()) {
+            setGmailClientId(data.gmailClientId);
+            setClientIdInput(data.gmailClientId);
+          }
+        })
+        .catch(() => {
+          if (retries < 2) {
+            retries++;
+            setTimeout(checkHealth, 2000 * retries);
+          } else {
+            setApiStatus(false);
+            setHubspotAvailable(false);
+          }
+        });
+    };
+    checkHealth();
   }, []);
 
   // Gmail
@@ -329,6 +344,17 @@ export default function Header() {
             </div>
           )}
         </div>
+
+        {/* API status indicator */}
+        {apiStatus === false && (
+          <span
+            className="px-3 py-1.5 rounded-lg text-[10px] font-medium"
+            style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#EF4444" }}
+            title="API server unreachable. The deployment may need to be restarted."
+          >
+            API Offline
+          </span>
+        )}
 
         {/* User avatar & logout */}
         {user && (
