@@ -39,7 +39,7 @@ export default function AttackPlan() {
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-7 animate-fade-in">
+    <div className="grid grid-cols-3 gap-4 mb-7 animate-fade-in">
       {sections.map((sec) => (
         <div
           key={sec.title}
