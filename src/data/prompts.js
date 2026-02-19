@@ -195,6 +195,35 @@ Analyze:
 3. Power users vs. inactive users
 4. Adoption improvement recommendations
 5. Usage-based expansion triggers`,
+
+    objection_handling: `Handle objections for ${deal.company}.
+Contact: ${deal.contact}. Stage: ${deal.stage || "N/A"}. Deal value: ${fmtAmt}.
+Health: ${deal.health}. Last activity: ${deal.lastActivity || "N/A"}.
+
+Objection codes:
+A — Timing
+B — Competitor
+C — AI skepticism / trust
+D — Budget
+E — Not a priority
+
+Analyze the deal context and:
+1. Identify the most likely objections based on deal stage, health, and activity
+2. Provide one-sentence responses for each likely objection
+3. Personalize using deal-specific context
+4. Suggest follow-up actions`,
+
+    account_research: `Account research for ${deal.company}.
+Contact: ${deal.contact}. Stage: ${deal.stage || "N/A"}. Deal value: ${fmtAmt}.
+Health: ${deal.health}. Close date: ${deal.closeDate || "N/A"}.
+
+Run the Account Research Assistant:
+1. Project types / regions / delivery model (confirmed facts only)
+2. Operational friction by persona (based on contacts)
+3. Tailored hooks for outreach
+4. Recommended CTA
+
+Only use confirmed facts. Never invent claims.`,
   };
 
   return prompts[actionId] || `Help me with ${deal.company}. Provide strategic sales guidance.`;

@@ -11,6 +11,8 @@ export const PIPELINE_ACTIONS = [
   { id: "call_track", label: "Call Track", icon: "\uD83C\uDFA4", desc: "Call framework" },
   { id: "research", label: "Research", icon: "\uD83D\uDD0D", desc: "Company research" },
   { id: "deep_research", label: "Deep Research", icon: "\uD83D\uDD2C", desc: "Web intel: news, projects, jobs" },
+  { id: "objection_handling", label: "Objections", icon: "\uD83D\uDEE1\uFE0F", desc: "Handle prospect objections (A-E)" },
+  { id: "account_research", label: "Account Intel", icon: "\uD83C\uDFAF", desc: "Personalized account research" },
   { id: "activity_timeline", label: "Activity", icon: "\uD83D\uDCC5", desc: "Full activity timeline — emails, calls, meetings mapped to deal cycle" },
   { id: "deal_story", label: "Deal Story", icon: "\uD83D\uDCD6", desc: "Deal narrative" },
   { id: "next_steps", label: "Next Steps", icon: "\u27A1\uFE0F", desc: "Prioritized actions" },
